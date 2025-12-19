@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>File Upload Test</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        .test-section { border: 1px solid #ddd; padding: 15px; margin: 10px 0; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        input { margin: 5px; }
+        .result { background: #f0f0f0; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>File Upload Test</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Direct File Input Click</h2>
+        <input type="file" id="testFileInput" accept="image/*" />
+        <button onclick="document.getElementById('testFileInput').click()">
+            Click to Open File Dialog
+        </button>
+        <div class="result" id="test1Result">Select a file and check console</div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: JavaScript Triggered Click</h2>
+        <input type="file" id="testFileInput2" accept="image/*" />
+        <button onclick="triggerFileInput()">Trigger File Input</button>
+        <div class="result" id="test2Result">Console will show events</div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: FormData Upload Simulation</h2>
+        <input type="file" id="testFileInput3" accept="image/*" />
+        <button onclick="testFormDataUpload()">Test Upload</button>
+        <div class="result" id="test3Result">Check console for results</div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 4: Chat App File Button</h2>
+        <button onclick="testChatFileButton()">Test Chat File Button</button>
+        <div class="result" id="test4Result">Console output will show result</div>
+    </div>
+
+    <script>
+        // Test 1 - Monitor file input
+        document.getElementById('testFileInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            console.log('Test 1 - File selected:', file.name);
+            document.getElementById('test1Result').textContent = '✅ File selected: ' + file.name;
+        });
+
+        // Test 2
+        function triggerFileInput() {
+            console.log('Test 2 - Triggering file input click...');
+            const input = document.getElementById('testFileInput2');
+            console.log('Input element:', input);
+            input.click();
+            console.log('Click triggered');
+        }
+
+        document.getElementById('testFileInput2').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            console.log('Test 2 - File selected:', file.name);
+            document.getElementById('test2Result').textContent = '✅ File selected: ' + file.name;
+        });
+
+        // Test 3
+        async function testFormDataUpload() {
+            const input = document.getElementById('testFileInput3');
+            const file = input.files[0];
+            
+            if (!file) {
+                console.log('Test 3 - No file selected');
+                document.getElementById('test3Result').textContent = '❌ No file selected';
+                return;
+            }
+
+            console.log('Test 3 - Preparing FormData...');
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('test', 'true');
+
+            console.log('Test 3 - FormData contents:');
+            for (let [key, value] of formData.entries()) {
+                console.log(`  ${key}:`, value);
+            }
+
+            try {
+                const response = await fetch('/api/messages/send-with-file/', {
+                    method: 'POST',
+                    body: formData
+                });
+                console.log('Test 3 - Response status:', response.status);
+                const data = await response.json();
+                console.log('Test 3 - Response:', data);
+                document.getElementById('test3Result').textContent = '✅ Upload request sent: ' + response.status;
+            } catch (error) {
+                console.error('Test 3 - Error:', error);
+                document.getElementById('test3Result').textContent = '❌ Error: ' + error.message;
+            }
+        }
+
+        // Test 4 - Chat app
+        function testChatFileButton() {
+            console.log('Test 4 - Checking chat app...');
+            
+            if (!window.chatApplication) {
+                console.log('Chat app not loaded yet');
+                document.getElementById('test4Result').textContent = '❌ Chat app not loaded';
+                return;
+            }
+
+            const btn = document.getElementById('attachFileBtn');
+            const input = document.getElementById('fileInput');
+            
+            console.log('Test 4 - Button found:', !!btn);
+            console.log('Test 4 - Input found:', !!input);
+            console.log('Test 4 - Chat app button:', !!window.chatApplication.attachFileBtn);
+            console.log('Test 4 - Chat app input:', !!window.chatApplication.fileInput);
+
+            if (btn) {
+                console.log('Test 4 - Triggering chat file button...');
+                btn.click();
+                document.getElementById('test4Result').textContent = '✅ Button click triggered (check file dialog)';
+            } else {
+                document.getElementById('test4Result').textContent = '❌ File button not found';
+            }
+        }
+
+        console.log('File Upload Test Page Loaded');
+    </script>
+</body>
+</html>

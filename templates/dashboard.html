@@ -1,0 +1,597 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatBoard - Dashboard</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            color: #333;
+        }
+
+        .dashboard-container {
+            display: flex;
+            height: 100vh;
+            background: #fff;
+        }
+
+        /* Header Styles */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 0 30px;
+            color: white;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -1px;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .current-user {
+            font-size: 14px;
+            opacity: 0.95;
+        }
+
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+            border-color: rgba(255,255,255,0.5);
+        }
+
+        /* Sidebar Styles */
+        .users-sidebar {
+            position: fixed;
+            left: 0;
+            top: 70px;
+            width: 320px;
+            height: calc(100vh - 70px);
+            background: white;
+            border-right: 1px solid #e0e0e0;
+            overflow-y: auto;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #f0f0f0;
+            background: #fafafa;
+        }
+
+        .sidebar-header h2 {
+            font-size: 18px;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .users-count {
+            font-size: 12px;
+            color: #999;
+        }
+
+        /* Unread Badge */
+        .unread-badge {
+            background: #ff5a5f;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            flex-shrink: 0;
+            min-width: 24px;
+        }
+
+        /* Search Box */
+        .search-box {
+            padding: 15px 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 20px;
+            font-size: 13px;
+            background: #f5f5f5;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            background: white;
+            border-color: #667eea;
+        }
+
+        /* Users List */
+        .users-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 0;
+        }
+
+        .no-users {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+            font-size: 14px;
+        }
+
+        .user-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 15px;
+            text-decoration: none;
+            color: inherit;
+            border-left: 3px solid transparent;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            margin: 5px 8px;
+            border-radius: 8px;
+        }
+
+        .user-card:hover {
+            background: #f5f5f5;
+            border-left-color: #667eea;
+        }
+
+        .user-card.active {
+            background: #f0f4ff;
+            border-left-color: #667eea;
+        }
+
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .user-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .user-name {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ccc;
+            transition: background 0.3s ease;
+        }
+
+        .status-dot.online {
+            background: #31a24c;
+            box-shadow: 0 0 6px rgba(49, 162, 76, 0.6);
+        }
+
+        .status-dot.offline {
+            background: #ccc;
+        }
+
+        .status-text {
+            color: #999;
+            font-size: 11px;
+        }
+
+        /* Main Content */
+        .dashboard-main {
+            margin-left: 320px;
+            margin-top: 70px;
+            width: calc(100% - 320px);
+            height: calc(100vh - 70px);
+            overflow: hidden;
+        }
+
+        .dashboard-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 40px;
+        }
+
+        .welcome-section {
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .welcome-content {
+            background: white;
+            border-radius: 12px;
+            padding: 50px 40px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .welcome-content h2 {
+            font-size: 32px;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .welcome-content > p {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .feature {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .feature:hover {
+            background: #f0f4ff;
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.2);
+        }
+
+        .feature-icon {
+            font-size: 32px;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .feature p {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        /* Scrollbar */
+        .users-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .users-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .users-list::-webkit-scrollbar-thumb {
+            background: #ddd;
+            border-radius: 3px;
+        }
+
+        .users-list::-webkit-scrollbar-thumb:hover {
+            background: #bbb;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .users-sidebar {
+                width: 100%;
+                height: 50vh;
+                top: auto;
+                bottom: 0;
+                border-right: none;
+                border-top: 1px solid #e0e0e0;
+            }
+
+            .dashboard-main {
+                margin-left: 0;
+                width: 100%;
+                height: 50vh;
+                margin-top: 0;
+            }
+
+            .dashboard-content {
+                padding: 20px;
+            }
+
+            .welcome-content {
+                padding: 30px 20px;
+            }
+
+            .welcome-content h2 {
+                font-size: 24px;
+            }
+
+            .header-content {
+                padding: 0 15px;
+            }
+
+            .logo {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="logo">💬 ChatBoard</h1>
+                <div class="user-menu">
+                    <span class="current-user">{{ current_user.username }}</span>
+                    <a href="{% url 'logout' %}" class="logout-btn">Logout</a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Users List Sidebar -->
+        <aside class="users-sidebar">
+            <div class="sidebar-header">
+                <h2>Contacts</h2>
+                <p class="users-count">{{ user_data|length }} contact{{ user_data|pluralize }}</p>
+            </div>
+
+            <div class="search-box">
+                <input type="text" id="userSearch" placeholder="Search contacts...">
+            </div>
+
+            <div class="users-list">
+                {% if user_data %}
+                    {% for data in user_data %}
+                        {% with user=data.user unread_count=data.unread_count %}
+                        <a href="{% url 'chat' user.id %}" class="user-card" data-user-id="{{ user.id }}" data-username="{{ user.username|lower }}">
+                            <div class="user-avatar">{{ user.username|first|upper }}</div>
+                            <div class="user-info">
+                                <div class="user-name" title="{{ user.get_full_name|default:user.username }}">{{ user.get_full_name|default:user.username }}</div>
+                                <div class="user-status">
+                                    <span class="status-dot {% if user.profile.is_online %}online{% else %}offline{% endif %}"></span>
+                                    <span class="status-text">
+                                        {% if user.profile.is_online %}Online{% else %}Offline{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            {% if unread_count > 0 %}
+                            <span class="unread-badge">{{ unread_count }}</span>
+                            {% endif %}
+                        </a>
+                        {% endwith %}
+                    {% endfor %}
+                {% else %}
+                    <p class="no-users">No contacts yet. Start chatting!</p>
+                {% endif %}
+            </div>
+        </aside>
+
+        <!-- Welcome Section -->
+        <main class="dashboard-content">
+            <div class="welcome-section">
+                <div class="welcome-content">
+                    <h2>Welcome, {{ current_user.username }}! 👋</h2>
+                    <p>Select a contact to start chatting</p>
+                    <div class="feature-list">
+						<a href="/ai-chat/" class="feature" style="text-decoration: none; color: inherit; cursor: pointer;">
+                            <span class="feature-icon">🤖</span>
+                            <p>AI Chat</p>
+                        </a>
+                        <a href="{% url 'online_status' %}" class="feature" style="text-decoration: none; color: inherit; cursor: pointer;">
+                            <span class="feature-icon">👥</span>
+                            <p>Online status</p>
+                        </a>
+                        <div class="feature">
+                            <span class="feature-icon">⏰</span>
+                            <p>Message history</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="{% static 'js/dashboard.js' %}"></script>
+    <script>
+        // AI Commands
+        const aiCommands = [
+            { name: '/help', description: 'Get help & tutorials', icon: '❓' },
+            { name: '/mocktest', description: 'Take mock tests', icon: '📝' },
+            { name: '/interview', description: 'Interview preparation', icon: '💼' }
+        ];
+
+        // Smart Search with AI Commands
+        document.getElementById('userSearch').addEventListener('keyup', function(e) {
+            const searchValue = e.target.value.trim().toLowerCase();
+            const userCards = document.querySelectorAll('.user-card');
+            const usersList = document.querySelector('.users-list');
+            
+            // Check if user is searching for AI commands
+            if (searchValue.startsWith('/')) {
+                const commandName = searchValue.substring(1);
+                const matchedCommands = aiCommands.filter(cmd => 
+                    cmd.name.toLowerCase().includes(searchValue.toLowerCase())
+                );
+                
+                if (matchedCommands.length > 0) {
+                    // Hide all user cards
+                    userCards.forEach(card => card.style.display = 'none');
+                    
+                    // Show AI commands
+                    const existingCommands = document.querySelector('.ai-commands-list');
+                    if (existingCommands) existingCommands.remove();
+                    
+                    const commandsContainer = document.createElement('div');
+                    commandsContainer.className = 'ai-commands-list';
+                    commandsContainer.style.cssText = 'padding: 10px 8px;';
+                    
+                    matchedCommands.forEach(cmd => {
+                        const cmdEl = document.createElement('a');
+                        cmdEl.href = 'javascript:void(0)';
+                        cmdEl.className = 'ai-command-item';
+                        cmdEl.style.cssText = `
+                            display: flex;
+                            align-items: center;
+                            gap: 12px;
+                            padding: 12px 15px;
+                            text-decoration: none;
+                            color: inherit;
+                            border-left: 3px solid transparent;
+                            transition: all 0.2s ease;
+                            cursor: pointer;
+                            margin: 5px 8px;
+                            border-radius: 8px;
+                            background: #f8f9fa;
+                        `;
+                        cmdEl.innerHTML = `
+                            <span style="font-size: 20px;">🤖</span>
+                            <div style="flex: 1;">
+                                <div style="font-size: 14px; font-weight: 500; color: #667eea;">${cmd.name}</div>
+                                <div style="font-size: 12px; color: #999;">${cmd.description}</div>
+                            </div>
+                        `;
+                        cmdEl.addEventListener('click', () => {
+                            alert(`${cmd.name} feature coming soon!`);
+                        });
+                        cmdEl.addEventListener('mouseover', () => {
+                            cmdEl.style.background = '#f0f4ff';
+                            cmdEl.style.borderLeftColor = '#667eea';
+                        });
+                        cmdEl.addEventListener('mouseout', () => {
+                            cmdEl.style.background = '#f8f9fa';
+                            cmdEl.style.borderLeftColor = 'transparent';
+                        });
+                        commandsContainer.appendChild(cmdEl);
+                    });
+                    
+                    usersList.innerHTML = '';
+                    usersList.appendChild(commandsContainer);
+                } else {
+                    usersList.innerHTML = '<p class="no-users">No commands found</p>';
+                }
+                return;
+            }
+            
+            // Remove AI commands if they exist
+            const existingCommands = document.querySelector('.ai-commands-list');
+            if (existingCommands) existingCommands.remove();
+            
+            // Name & Email Search
+            let hasResults = false;
+            userCards.forEach(card => {
+                const username = card.getAttribute('data-username');
+                const fullName = card.querySelector('.user-name').textContent.toLowerCase();
+                const email = (card.getAttribute('data-email') || '').toLowerCase();
+                
+                if (username.includes(searchValue) || 
+                    fullName.includes(searchValue) || 
+                    email.includes(searchValue)) {
+                    card.style.display = '';
+                    hasResults = true;
+                    
+                    // Highlight matched text
+                    const nameEl = card.querySelector('.user-name');
+                    const originalText = nameEl.getAttribute('data-original') || nameEl.textContent;
+                    nameEl.setAttribute('data-original', originalText);
+                    
+                    if (searchValue) {
+                        const regex = new RegExp(`(${searchValue})`, 'gi');
+                        nameEl.innerHTML = originalText.replace(regex, '<mark style="background: #fff3cd; font-weight: 600;">$1</mark>');
+                    } else {
+                        nameEl.textContent = originalText;
+                    }
+                } else {
+                    card.style.display = 'none';
+                    const nameEl = card.querySelector('.user-name');
+                    const originalText = nameEl.getAttribute('data-original') || nameEl.textContent;
+                    nameEl.textContent = originalText;
+                }
+            });
+            
+            if (!hasResults && searchValue) {
+                usersList.innerHTML = '<p class="no-users">📭 No contacts found for "<strong>' + searchValue + '</strong>"</p>';
+            } else if (!searchValue) {
+                userCards.forEach(card => card.style.display = '');
+                usersList.innerHTML = '';
+                userCards.forEach(card => usersList.appendChild(card));
+            }
+        });
+
+        // Initialize dashboard app
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof DashboardApplication !== 'undefined') {
+                new DashboardApplication();
+            }
+        });
+    </script>
+</body>
+</html>

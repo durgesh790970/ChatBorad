@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>File Upload Test - No Auth Required</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .container { background: white; border-radius: 10px; padding: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 500px; width: 90%; }
+        h1 { color: #333; margin-bottom: 10px; }
+        .subtitle { color: #666; margin-bottom: 30px; }
+        .test-section { margin: 20px 0; padding: 20px; background: #f5f5f5; border-radius: 8px; }
+        .test-section h3 { color: #333; margin-bottom: 15px; font-size: 16px; }
+        input[type="file"] { display: none; }
+        button { background: #667eea; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.3s; }
+        button:hover { background: #764ba2; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .result { margin-top: 10px; padding: 10px; background: white; border-left: 3px solid #4CAF50; border-radius: 4px; color: #333; }
+        .result.error { border-left-color: #f44336; }
+        .log { background: #1e1e1e; color: #0f0; padding: 15px; border-radius: 6px; margin-top: 15px; font-family: 'Courier New', monospace; font-size: 12px; max-height: 200px; overflow-y: auto; }
+        .success { color: #4CAF50; }
+        .error-text { color: #f44336; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 File Upload Test Suite</h1>
+        <p class="subtitle">Test file upload functionality without authentication</p>
+
+        <div class="test-section">
+            <h3>Test 1: Simple File Input</h3>
+            <input type="file" id="test1" accept="image/*,.pdf">
+            <button onclick="testSimpleClick()">📎 Click to Open File Dialog</button>
+            <div id="result1" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 2: Form Data Upload Simulation</h3>
+            <input type="file" id="test2" accept="image/*,.pdf">
+            <button onclick="testFormDataSimulation()">📤 Upload File (Simulated)</button>
+            <div id="result2" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 3: Real API Upload</h3>
+            <input type="file" id="test3" accept="image/*,.pdf">
+            <button onclick="testRealUpload()">📡 Upload to API</button>
+            <div id="result3" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Console Log</h3>
+            <div id="log" class="log"></div>
+            <button onclick="clearLog()" style="width: 100%; margin-top: 10px;">Clear Log</button>
+        </div>
+    </div>
+
+    <script>
+        // Capture console
+        const logDiv = document.getElementById('log');
+        const origLog = console.log;
+        const origError = console.error;
+
+        console.log = function(...args) {
+            origLog(...args);
+            const msg = args.join(' ');
+            logDiv.innerHTML += `<div class="success">${new Date().toLocaleTimeString()} → ${msg}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        };
+
+        console.error = function(...args) {
+            origError(...args);
+            const msg = args.join(' ');
+            logDiv.innerHTML += `<div class="error-text">${new Date().toLocaleTimeString()} ❌ ${msg}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        };
+
+        function clearLog() {
+            logDiv.innerHTML = '';
+        }
+
+        function showResult(testId, message, isSuccess = true) {
+            const resultDiv = document.getElementById(`result${testId}`);
+            resultDiv.innerHTML = (isSuccess ? '✅ ' : '❌ ') + message;
+            resultDiv.classList.toggle('error', !isSuccess);
+            resultDiv.style.display = 'block';
+        }
+
+        // Test 1
+        function testSimpleClick() {
+            console.log('Test 1: Opening file dialog via simple click');
+            const input = document.getElementById('test1');
+            input.click();
+        }
+
+        document.getElementById('test1').addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                const file = e.target.files[0];
+                console.log(`File selected: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
+                showResult(1, `File selected: <strong>${file.name}</strong>`);
+            }
+        });
+
+        // Test 2
+        function testFormDataSimulation() {
+            const input = document.getElementById('test2');
+            const file = input.files[0];
+
+            if (!file) {
+                console.error('No file selected for Test 2');
+                showResult(2, 'No file selected', false);
+                return;
+            }
+
+            console.log(`Test 2: Simulating FormData with file ${file.name}`);
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('message', 'Test message');
+
+            console.log('FormData entries:');
+            for (let [key, value] of formData.entries()) {
+                if (value instanceof File) {
+                    console.log(`  - ${key}: File(${value.name}, ${value.size} bytes)`);
+                } else {
+                    console.log(`  - ${key}: ${value}`);
+                }
+            }
+            
+            showResult(2, `FormData prepared with ${file.name}`);
+        }
+
+        // Test 3
+        async function testRealUpload() {
+            const input = document.getElementById('test3');
+            const file = input.files[0];
+
+            if (!file) {
+                console.error('No file selected for Test 3');
+                showResult(3, 'No file selected', false);
+                return;
+            }
+
+            // We need to be authenticated to use the real API
+            // Check if we're authenticated by making a simple request
+            try {
+                const testResponse = await fetch('/api/users/', { method: 'GET' });
+                
+                if (testResponse.status === 403) {
+                    console.error('Not authenticated - please login at /login first');
+                    showResult(3, 'Not authenticated. Please login first', false);
+                    return;
+                }
+
+                if (testResponse.status === 200) {
+                    console.log('✅ Authenticated, proceeding with upload test');
+                    
+                    // Get CSRF token from cookie
+                    const getCookie = (name) => {
+                        let cookieValue = null;
+                        if (document.cookie && document.cookie !== '') {
+                            const cookies = document.cookie.split(';');
+                            for (let i = 0; i < cookies.length; i++) {
+                                const cookie = cookies[i].trim();
+                                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                    break;
+                                }
+                            }
+                        }
+                        return cookieValue;
+                    };
+
+                    const csrfToken = getCookie('csrftoken');
+                    console.log('CSRF Token found:', !!csrfToken);
+
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('message', 'Test message from upload page');
+                    formData.append('other_user_id', '1'); // This may not work without proper context
+
+                    console.log(`Uploading file: ${file.name}`);
+                    
+                    const uploadResponse = await fetch('/api/messages/send-with-file/', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrfToken || ''
+                        },
+                        body: formData
+                    });
+
+                    console.log(`Upload response status: ${uploadResponse.status}`);
+                    const responseData = await uploadResponse.json();
+                    console.log('Response data:', responseData);
+
+                    if (uploadResponse.ok) {
+                        showResult(3, `File uploaded successfully! Response: ${responseData.message || 'OK'}`);
+                    } else {
+                        showResult(3, `Upload failed: ${responseData.error || 'Unknown error'}`, false);
+                    }
+                } else {
+                    throw new Error(`Unexpected status: ${testResponse.status}`);
+                }
+            } catch (error) {
+                console.error('Error during test:', error.message);
+                showResult(3, `Error: ${error.message}`, false);
+            }
+        }
+
+        console.log('📄 File Upload Test Page Loaded');
+        console.log('💡 Tests 1 & 2 work without authentication');
+        console.log('💡 Test 3 requires login - please login first at /login');
+    </script>
+</body>
+</html>

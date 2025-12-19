@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>File Upload Direct Test</title>
+    <style>
+        body { font-family: Arial; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .test { border: 2px dashed #667eea; padding: 20px; margin: 15px 0; border-radius: 8px; }
+        .test h2 { color: #667eea; }
+        input[type="file"] { display: none; }
+        button { background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+        button:hover { background: #764ba2; }
+        .result { background: #f0f0f0; padding: 10px; margin-top: 10px; border-radius: 4px; }
+        .console { background: #222; color: #0f0; padding: 15px; border-radius: 8px; margin: 20px 0; font-family: monospace; font-size: 12px; max-height: 250px; overflow-y: auto; }
+        .log-entry { margin: 2px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Direct File Upload Test</h1>
+        <p>This page tests file upload in the same way the chat app does</p>
+
+        <div class="test">
+            <h2>Test 1: Simple HTML - Inline onclick</h2>
+            <input type="file" id="simpleFileInput" accept="image/*,.pdf">
+            <button type="button" onclick="document.getElementById('simpleFileInput').click(); return false;">
+                📎 Click to select file (Inline onclick)
+            </button>
+            <div id="result1" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test">
+            <h2>Test 2: JavaScript EventListener</h2>
+            <input type="file" id="jsFileInput" accept="image/*,.pdf">
+            <button type="button" id="jsButton">📎 Click to select file (Event Listener)</button>
+            <div id="result2" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test">
+            <h2>Test 3: Chat App Style (with message input)</h2>
+            <form id="messageForm" enctype="multipart/form-data">
+                <input type="file" id="chatFileInput" accept="image/*,.pdf,.doc,.docx,.txt,.xlsx,.pptx" style="display: none;">
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" id="attachFileBtn" style="background: #667eea; border: none; color: white; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-size: 16px;">
+                        📎
+                    </button>
+                    <input type="text" id="messageInput" placeholder="Type a message..." style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                    <button type="submit" style="background: #4CAF50; border: none; color: white; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
+                        Send
+                    </button>
+                </div>
+                <div id="filePreview" style="display: none; padding: 10px; background: #f9f9f9; margin-top: 10px; border-radius: 6px;">
+                    <span id="previewText">📎 File selected</span>
+                    <button type="button" id="removeFileBtn" style="float: right; background: #f44336; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">✕</button>
+                </div>
+            </form>
+            <div id="result3" class="result" style="display: none;"></div>
+        </div>
+
+        <h2>Console Output:</h2>
+        <div class="console" id="console"></div>
+        <button onclick="clearConsole()" style="width: 100%; margin-top: 10px;">Clear Console</button>
+    </div>
+
+    <script>
+        // Setup console capture
+        const consoleDiv = document.getElementById('console');
+        const origLog = console.log;
+        const origError = console.error;
+
+        console.log = function(...args) {
+            origLog(...args);
+            const msg = args.join(' ');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.style.color = '#0f0';
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ✓ ${msg}`;
+            consoleDiv.appendChild(entry);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        };
+
+        console.error = function(...args) {
+            origError(...args);
+            const msg = args.join(' ');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.style.color = '#f44';
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ✗ ${msg}`;
+            consoleDiv.appendChild(entry);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        };
+
+        function clearConsole() {
+            consoleDiv.innerHTML = '';
+        }
+
+        // Test 1: Simple inline onclick
+        document.getElementById('simpleFileInput').addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                const file = e.target.files[0];
+                console.log(`Test 1: File selected - ${file.name}`);
+                document.getElementById('result1').innerHTML = `✅ File selected: <strong>${file.name}</strong> (${(file.size / 1024).toFixed(2)} KB)`;
+                document.getElementById('result1').style.display = 'block';
+            }
+        });
+
+        // Test 2: JavaScript event listener
+        document.getElementById('jsButton').addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('Test 2: Button clicked, triggering file input');
+            document.getElementById('jsFileInput').click();
+        });
+
+        document.getElementById('jsFileInput').addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                const file = e.target.files[0];
+                console.log(`Test 2: File selected - ${file.name}`);
+                document.getElementById('result2').innerHTML = `✅ File selected: <strong>${file.name}</strong> (${(file.size / 1024).toFixed(2)} KB)`;
+                document.getElementById('result2').style.display = 'block';
+            }
+        });
+
+        // Test 3: Chat style
+        let selectedFile = null;
+
+        document.getElementById('attachFileBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('Test 3: Attach button clicked');
+            document.getElementById('chatFileInput').click();
+        });
+
+        document.getElementById('chatFileInput').addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                const file = e.target.files[0];
+                selectedFile = file;
+                console.log(`Test 3: File selected - ${file.name}`);
+                
+                document.getElementById('previewText').textContent = `📎 ${file.name}`;
+                document.getElementById('filePreview').style.display = 'block';
+                document.getElementById('messageInput').focus();
+                
+                document.getElementById('result3').innerHTML = `✅ File selected: <strong>${file.name}</strong><br>📝 Type message and click Send`;
+                document.getElementById('result3').style.display = 'block';
+            }
+        });
+
+        document.getElementById('removeFileBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('Test 3: Remove file clicked');
+            selectedFile = null;
+            document.getElementById('chatFileInput').value = '';
+            document.getElementById('filePreview').style.display = 'none';
+            document.getElementById('messageInput').focus();
+        });
+
+        document.getElementById('messageForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const message = document.getElementById('messageInput').value.trim();
+            
+            if (selectedFile) {
+                console.log(`Test 3: Submitting message "${message}" with file "${selectedFile.name}"`);
+                console.log('Test 3: In real app, this would upload to /api/messages/send-with-file/');
+                
+                // Simulate FormData preparation
+                const formData = new FormData();
+                formData.append('message', message);
+                formData.append('file', selectedFile);
+                
+                let items = [];
+                for (let [key, value] of formData.entries()) {
+                    if (value instanceof File) {
+                        items.push(`${key}: File(${value.name})`);
+                    } else {
+                        items.push(`${key}: ${value}`);
+                    }
+                }
+                console.log(`FormData contents: ${items.join(', ')}`);
+            } else {
+                console.log(`Test 3: Submitting message "${message}" without file`);
+                console.log('Test 3: In real app, this would send via WebSocket');
+            }
+            
+            // Clear form
+            document.getElementById('messageInput').value = '';
+            selectedFile = null;
+            document.getElementById('chatFileInput').value = '';
+            document.getElementById('filePreview').style.display = 'none';
+        });
+
+        // Initial log
+        console.log('📄 File Upload Test Page Loaded');
+        console.log('💡 Test 1 & 2 show different methods of triggering file selection');
+        console.log('💡 Test 3 simulates the chat app file upload flow');
+    </script>
+</body>
+</html>

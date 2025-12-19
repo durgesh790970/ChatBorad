@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ChatBoard - WebSocket Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.success { background: #4CAF50; color: white; }
+        .status.error { background: #f44336; color: white; }
+        .status.info { background: #2196F3; color: white; }
+        .status.warning { background: #ff9800; color: white; }
+        
+        .log {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 10px;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+        
+        input, button {
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            cursor: pointer;
+            border: none;
+        }
+        
+        button:hover { background: #764ba2; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 ChatBoard WebSocket Test Panel</h1>
+        
+        <div class="test-section">
+            <h2>1️⃣ Connection Status</h2>
+            <div id="connectionStatus" class="status info">Loading...</div>
+            <button onclick="testConnection()">🔌 Test Connection</button>
+            <button onclick="location.reload()">🔄 Refresh Page</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>2️⃣ Debug Information</h2>
+            <div id="debugInfo" class="log"></div>
+            <button onclick="showDebugInfo()">📊 Show Debug Info</button>
+            <button onclick="clearDebugInfo()">🗑️ Clear</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>3️⃣ Send Test Message</h2>
+            <input type="text" id="testMessage" placeholder="Enter test message" value="Hello from test panel!">
+            <button onclick="sendTestMessage()">📤 Send Message</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>4️⃣ Browser Console Output</h2>
+            <div id="consoleLog" class="log"></div>
+            <button onclick="openConsole()">🖥️ Open Full Console (F12)</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>5️⃣ Quick Actions</h2>
+            <button onclick="goBack()">← Back to Chat</button>
+            <button onclick="goToDashboard()">📋 Back to Dashboard</button>
+            <button onclick="resetChat()">🔄 Reset Chat</button>
+        </div>
+    </div>
+
+    <script>
+        // Capture console logs
+        const consoleLogs = [];
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            const message = args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+            consoleLogs.push(message);
+            updateConsoleLogs();
+        };
+
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            const message = '❌ ' + args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+            consoleLogs.push(message);
+            updateConsoleLogs();
+        };
+
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            const message = '⚠️ ' + args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+            consoleLogs.push(message);
+            updateConsoleLogs();
+        };
+
+        function updateConsoleLogs() {
+            const logDiv = document.getElementById('consoleLog');
+            logDiv.innerHTML = consoleLogs.slice(-20).map(log => log + '<br>').join('');
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function testConnection() {
+            const statusDiv = document.getElementById('connectionStatus');
+            statusDiv.innerHTML = '⏳ Testing...';
+            
+            // Check if we're on the chat page
+            const messageForm = document.getElementById('messageForm');
+            if (!messageForm) {
+                statusDiv.className = 'status warning';
+                statusDiv.innerHTML = '⚠️ Not on chat page. This test panel works best when opened from the chat page.';
+                return;
+            }
+
+            // Try to get status from main page
+            if (typeof window.opener !== 'undefined' || window.parent !== window) {
+                statusDiv.className = 'status info';
+                statusDiv.innerHTML = '📋 Go back to the chat page and check F12 console for real-time logs.';
+            } else {
+                statusDiv.className = 'status warning';
+                statusDiv.innerHTML = '📌 Please go back to the actual chat page to test messaging functionality.';
+            }
+        }
+
+        function showDebugInfo() {
+            const debugDiv = document.getElementById('debugInfo');
+            let info = '<strong>Page Information:</strong><br>';
+            info += `URL: ${window.location.href}<br>`;
+            info += `Protocol: ${window.location.protocol}<br>`;
+            info += `Host: ${window.location.host}<br>`;
+            info += `<br><strong>Global Variables:</strong><br>`;
+            info += `CURRENT_USER_ID: ${typeof window.CURRENT_USER_ID}<br>`;
+            info += `OTHER_USER_ID: ${typeof window.OTHER_USER_ID}<br>`;
+            info += `WS_URL: ${typeof window.WS_URL}<br>`;
+            info += `<br><strong>ChatApplication:</strong><br>`;
+            
+            if (typeof window.chatApplication !== 'undefined') {
+                info += `Instance: ✅ Found<br>`;
+                info += `WebSocket: ${window.chatApplication.socket ? '✅ Created' : '❌ Not created'}<br>`;
+                if (window.chatApplication.socket) {
+                    const states = ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'];
+                    info += `State: ${states[window.chatApplication.socket.readyState]} (${window.chatApplication.socket.readyState})<br>`;
+                }
+            } else {
+                info += `Instance: ❌ Not found (run this on chat page)<br>`;
+            }
+            
+            debugDiv.innerHTML = info;
+        }
+
+        function clearDebugInfo() {
+            document.getElementById('debugInfo').innerHTML = '';
+            consoleLogs.length = 0;
+            updateConsoleLogs();
+        }
+
+        function sendTestMessage() {
+            if (typeof window.chatApplication === 'undefined') {
+                alert('❌ ChatApplication not found.\n\nPlease go back to the actual chat page in the main window.');
+                return;
+            }
+
+            const msg = document.getElementById('testMessage').value;
+            if (!msg.trim()) {
+                alert('⚠️ Please enter a message');
+                return;
+            }
+
+            document.getElementById('messageInput').value = msg;
+            window.chatApplication.sendMessage();
+            alert('📤 Message sent! Check the chat window.');
+        }
+
+        function openConsole() {
+            alert('DevTools are opening...\n\nPress F12 to keep them open and see live logs.');
+        }
+
+        function goBack() {
+            window.history.back();
+        }
+
+        function goToDashboard() {
+            window.location.href = '/dashboard/';
+        }
+
+        function resetChat() {
+            if (confirm('Reset chat? This will reload the page.')) {
+                window.location.reload();
+            }
+        }
+
+        // Initial check
+        window.addEventListener('load', () => {
+            testConnection();
+            showDebugInfo();
+        });
+    </script>
+</body>
+</html>

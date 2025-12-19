@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat File Upload - Detailed Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .test {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            background: #fafafa;
+        }
+        .pass { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
+        input, button { padding: 8px 12px; margin: 5px; }
+        .log { 
+            background: #222; 
+            color: #0f0; 
+            padding: 10px; 
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 10px 0;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Chat File Upload - Comprehensive Test</h1>
+        
+        <div class="test">
+            <h2>Test 1: File Input Direct Click</h2>
+            <input type="file" id="test1Input" accept="image/*">
+            <button onclick="test1()">Click File Input</button>
+            <div id="test1Log" class="log"></div>
+        </div>
+
+        <div class="test">
+            <h2>Test 2: Button with Inline onclick</h2>
+            <input type="file" id="test2Input" accept="image/*" style="display: none;">
+            <button type="button" onclick="document.getElementById('test2Input').click(); return false;">
+                📎 Attach File (Inline onclick)
+            </button>
+            <div id="test2Log" class="log"></div>
+        </div>
+
+        <div class="test">
+            <h2>Test 3: Button with addEventListener</h2>
+            <input type="file" id="test3Input" accept="image/*" style="display: none;">
+            <button type="button" id="test3Btn">📎 Attach File (Event Listener)</button>
+            <div id="test3Log" class="log"></div>
+        </div>
+
+        <div class="test">
+            <h2>Test 4: Chat Application File Button Test</h2>
+            <button onclick="testChatApplication()">Test Chat App File Button</button>
+            <div id="test4Log" class="log"></div>
+        </div>
+
+        <div class="test">
+            <h2>Console Output (Real-time)</h2>
+            <button onclick="clearLogs()">Clear Console</button>
+            <div id="consoleLogs" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        // Override console.log to capture output
+        const origLog = console.log;
+        const consoleLogs = document.getElementById('consoleLogs');
+        
+        function addConsoleLog(msg) {
+            const time = new Date().toLocaleTimeString();
+            const line = `[${time}] ${msg}`;
+            consoleLogs.innerHTML += line + '<br>';
+            consoleLogs.scrollTop = consoleLogs.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            origLog(...args);
+            addConsoleLog(args.join(' '));
+        };
+
+        function clearLogs() {
+            consoleLogs.innerHTML = '';
+        }
+
+        // Test 1
+        function test1() {
+            const log = document.getElementById('test1Log');
+            const input = document.getElementById('test1Input');
+            console.log('Test 1: Clicking file input directly');
+            log.innerHTML += '<div class="pass">✅ Clicking directly on file input</div>';
+            input.click();
+        }
+
+        document.getElementById('test1Input').addEventListener('change', (e) => {
+            const log = document.getElementById('test1Log');
+            const file = e.target.files[0];
+            if (file) {
+                log.innerHTML += `<div class="pass">✅ File selected: ${file.name} (${file.size} bytes)</div>`;
+                console.log(`Test 1: File selected - ${file.name}`);
+            }
+        });
+
+        // Test 2
+        document.getElementById('test2Input').addEventListener('change', (e) => {
+            const log = document.getElementById('test2Log');
+            const file = e.target.files[0];
+            if (file) {
+                log.innerHTML += `<div class="pass">✅ File selected: ${file.name} (${file.size} bytes)</div>`;
+                console.log(`Test 2: File selected - ${file.name}`);
+            }
+        });
+
+        // Test 3
+        document.getElementById('test3Btn').addEventListener('click', (e) => {
+            e.preventDefault();
+            const input = document.getElementById('test3Input');
+            console.log('Test 3: Button clicked, triggering file input');
+            document.getElementById('test3Log').innerHTML += '<div class="pass">✅ Button click detected</div>';
+            input.click();
+        });
+
+        document.getElementById('test3Input').addEventListener('change', (e) => {
+            const log = document.getElementById('test3Log');
+            const file = e.target.files[0];
+            if (file) {
+                log.innerHTML += `<div class="pass">✅ File selected: ${file.name} (${file.size} bytes)</div>`;
+                console.log(`Test 3: File selected - ${file.name}`);
+            }
+        });
+
+        // Test 4: Chat Application
+        function testChatApplication() {
+            const log = document.getElementById('test4Log');
+            console.log('Test 4: Checking ChatApplication...');
+
+            if (!window.chatApplication) {
+                log.innerHTML = '<div class="fail">❌ ChatApplication not found in window</div>';
+                console.error('ChatApplication not found');
+                return;
+            }
+
+            log.innerHTML = '<div class="pass">✅ ChatApplication found</div>';
+
+            const btn = document.getElementById('attachFileBtn');
+            const input = document.getElementById('fileInput');
+
+            if (!btn) {
+                log.innerHTML += '<div class="fail">❌ attachFileBtn not found in DOM</div>';
+            } else {
+                log.innerHTML += '<div class="pass">✅ attachFileBtn found in DOM</div>';
+            }
+
+            if (!input) {
+                log.innerHTML += '<div class="fail">❌ fileInput not found in DOM</div>';
+            } else {
+                log.innerHTML += '<div class="pass">✅ fileInput found in DOM</div>';
+            }
+
+            if (!window.chatApplication.attachFileBtn) {
+                log.innerHTML += '<div class="fail">❌ ChatApplication.attachFileBtn is null</div>';
+            } else {
+                log.innerHTML += '<div class="pass">✅ ChatApplication.attachFileBtn is initialized</div>';
+            }
+
+            if (!window.chatApplication.fileInput) {
+                log.innerHTML += '<div class="fail">❌ ChatApplication.fileInput is null</div>';
+            } else {
+                log.innerHTML += '<div class="pass">✅ ChatApplication.fileInput is initialized</div>';
+            }
+
+            log.innerHTML += '<div style="margin-top: 10px; padding: 10px; background: #e3f2fd; border-left: 3px solid #2196F3;">Now attempting to click the file button...</div>';
+            console.log('Test 4: Attempting to click attachFileBtn');
+
+            if (btn) {
+                btn.click();
+                log.innerHTML += '<div class="pass">✅ Button click triggered (check for file dialog)</div>';
+            } else {
+                log.innerHTML += '<div class="fail">❌ Cannot click button - not found</div>';
+            }
+        }
+
+        console.log('📄 Comprehensive File Upload Test Page Loaded');
+        console.log('💡 You are currently on: test_file_upload_detailed.html');
+        console.log('Navigate to chat page to test actual chat file upload');
+    </script>
+</body>
+</html>

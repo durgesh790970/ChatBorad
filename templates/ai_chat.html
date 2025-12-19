@@ -1,0 +1,2554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatBoard - Real-time Messaging</title>
+    <style>
+        /* ==================== GLOBAL STYLES ==================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #fff;
+            color: #333;
+            overflow: hidden;
+        }
+
+        /* ==================== MAIN CONTAINER ==================== */
+        .container {
+            display: flex;
+            height: 100vh;
+            background: #fff;
+        }
+
+        /* ==================== LEFT SIDEBAR - CONTACTS LIST ==================== */
+        .left-panel {
+            width: 30%;
+            background: #fff;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Header */
+        .left-header {
+            padding: 15px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #667eea 100%);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .left-header h1 {
+            font-size: 30.1px;
+            font-weight: 600;
+        }
+
+        .header-icons {
+            display: flex;
+            gap: 15px;
+            font-size: 20px;
+        }
+
+        .header-icons button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.3s;
+        }
+
+        .header-icons button:hover {
+            opacity: 0.8;
+            transform: scale(1.1);
+        }
+
+        /* Menu Dropdown */
+        .menu-container {
+            position: relative;
+        }
+
+        .menu-dropdown {
+            position: absolute;
+            top: 50px;
+            right: 0;
+            background: #000;
+            border: 1px solid #667eea;
+            border-radius: 8px;
+            box-shadow: 0 0 8px rgba(0, 123, 255, 0.5);
+            min-width: 200px;
+            z-index: 1000;
+            display: none;
+            overflow: hidden;
+            animation: slideDown 0.2s ease;
+        }
+
+        .menu-dropdown.active {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .menu-item {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			padding: 12px 16px;
+			border: none;
+			background: none;
+			cursor: pointer;
+			font-size: 14px;
+			color: #000;   /* BLACK TEXT */
+			width: 100%;
+			text-align: left;
+			transition: all 0.2s;
+		}
+
+        .menu-item:hover {
+            background: #667eea;
+            padding-left: 20px;
+        }
+
+        .menu-item.danger {
+            color: #667eea;
+        }
+
+        .menu-item.danger:hover {
+            background: #667eea;
+        }
+
+        .menu-divider {
+            height: 1px;
+            background: #667eea;
+            margin: 4px 0;
+        }
+
+        /* Search Box */
+        .search-container {
+            padding: 10px 15px;
+            background: #f5f5f5;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            background: white;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 8px rgba(0, 123, 255, 0.5);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            padding: 10px 15px;
+            gap: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            background: #f9f9f9;
+        }
+
+        .tab-btn {
+            padding: 6px 12px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 13px;
+            color: #999;
+            border-radius: 15px;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        /* Contacts List */
+        .contacts-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0;
+        }
+
+        .contact-item {
+            padding: 10px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .contact-item:hover {
+            background: #f5f5f5;
+        }
+
+        .contact-item.active {
+            background: #e8f5f4;
+            border-left: 4px solid #667eea;
+            padding-left: 11px;
+        }
+
+        /* Contact Avatar */
+        .contact-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .contact-avatar.ai-1 { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .contact-avatar.ai-2 { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .contact-avatar.ai-3 { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .contact-avatar.ai-4 { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .contact-avatar.ai-5 { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        .contact-avatar.ai-6 { background: linear-gradient(135deg, #667eea 0%, #330867 100%); }
+        .contact-avatar.ai-7 { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
+        .contact-avatar.ai-8 { background: linear-gradient(135deg, #ff9a56 0%, #ff6a88 100%); }
+
+        /* Contact Info */
+        .contact-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .contact-name {
+            font-weight: 500;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .contact-message {
+            font-size: 12px;
+            color: #999;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .contact-time {
+            font-size: 12px;
+            color: #999;
+        }
+
+        /* Scrollbar */
+        .contacts-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .contacts-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .contacts-list::-webkit-scrollbar-thumb {
+            background: #ddd;
+            border-radius: 3px;
+        }
+
+        .contacts-list::-webkit-scrollbar-thumb:hover {
+            background: #bbb;
+        }
+
+        /* ==================== RIGHT PANEL - CHAT AREA ==================== */
+        .right-panel {
+            width: 70%;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Chat Header */
+        .chat-header {
+            padding: 15px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .chat-header-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .chat-header-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .chat-header-text h2 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .chat-header-text p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .chat-header-actions {
+            display: flex;
+            gap: 15px;
+            font-size: 20px;
+        }
+
+        .chat-header-actions button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .chat-header-actions button:hover {
+            opacity: 0.8;
+            transform: scale(1.1);
+        }
+
+        /* Empty Chat State */
+        .empty-state {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            text-align: center;
+        }
+
+        .empty-state-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h3 {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: #666;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            color: #999;
+        }
+
+        /* Messages Area */
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* Message Bubble */
+        .message {
+            display: flex;
+            gap: 10px;
+            animation: slideIn 0.3s ease;
+        }
+
+        .message-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message.user .message-wrapper {
+            align-items: flex-end;
+        }
+
+        .message.ai .message-wrapper {
+            align-items: flex-start;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 15px;
+            line-height: 1.5;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            overflow-wrap: break-word;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.08);
+        }
+
+        /* Paragraph styling inside message bubble */
+        .message-bubble p {
+            margin: 6px 0;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .message-bubble p:first-child {
+            margin-top: 0;
+        }
+
+        .message-bubble p:last-child {
+            margin-bottom: 0;
+        }
+
+        .message-bubble br {
+            display: block;
+            content: "";
+            margin: 3px 0;
+        }
+
+        /* Bullet points and lists */
+        .message-bubble ul, 
+        .message-bubble ol {
+            margin: 6px 0;
+            padding-left: 20px;
+        }
+
+        .message-bubble li {
+            margin: 4px 0;
+            line-height: 1.5;
+        }
+
+        .message-bubble strong {
+            font-weight: 600;
+        }
+
+        .message-bubble em {
+            font-style: italic;
+        }
+
+        /* Message Image Styles */
+        .message-image {
+            max-width: 250px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 8px;
+        }
+
+        .message-image img {
+            width: 100%;
+            height: auto;
+            max-height: 300px;
+            object-fit: cover;
+            display: block;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .message-image img:hover {
+            transform: scale(1.02);
+        }
+
+        .message.user .message-bubble {
+            background: #667eea;
+            color: #000;
+            border-bottom-right-radius: 3px;
+        }
+
+        .message.ai .message-bubble {
+            background: #fff;
+            color: #000;
+            border-bottom-left-radius: 3px;
+            border: 1px solid #e5e5e5;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #999;
+            margin-top: 2px;
+        }
+
+        /* Deleted Message Styling */
+        .message.deleted .message-bubble {
+            background: #f0f0f0 !important;
+            color: #999 !important;
+            font-style: italic;
+            opacity: 0.7;
+        }
+
+        .message.deleted .message-bubble::before {
+            content: '🚫 ';
+            margin-right: 4px;
+        }
+
+        /* Message Reactions */
+        .message-wrapper {
+            position: relative;
+        }
+
+        .message-reactions-container {
+            position: absolute;
+            bottom: -35px;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            padding: 6px 8px;
+            display: flex;
+            gap: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+            z-index: 100;
+            animation: reactionSlideIn 0.3s ease forwards;
+        }
+
+        @keyframes reactionSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-wrapper:hover .message-reactions-container,
+        .message-reactions-container.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .reaction-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: #f0f0f0;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            padding: 0;
+        }
+
+        .reaction-btn:hover {
+            background: #e8e8e8;
+            transform: scale(1.15);
+        }
+
+        /* Reaction badges below message */
+        .message-emoji-reactions {
+            display: flex;
+            gap: 6px;
+            margin-top: 6px;
+            flex-wrap: wrap;
+        }
+
+        .emoji-reaction {
+            background: #f0f0f0;
+            border-radius: 12px;
+            padding: 3px 8px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .emoji-reaction:hover {
+            background: #e8e8e8;
+            border-color: #ddd;
+        }
+
+        .emoji-reaction.user-reacted {
+            background: #dcf8c6;
+            border-color: #b8e6b8;
+        }
+
+        .emoji-reaction-emoji {
+            font-size: 14px;
+        }
+
+        .emoji-reaction-count {
+            font-size: 11px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .message-context-menu {
+            position: fixed;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            z-index: 9999;
+            display: none;
+            min-width: 250px;
+            max-width: 280px;
+            animation: contextMenuSlideIn 0.3s ease;
+            overflow: hidden;
+        }
+
+        .message-context-menu.active {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        @keyframes contextMenuSlideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes messageDeletedPulse {
+            0% {
+                background: #fff;
+            }
+            50% {
+                background: #ffebee;
+            }
+            100% {
+                background: #fff;
+            }
+        }
+
+        /* Emoji Reactions */
+        .context-reactions {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 12px 8px;
+            border-bottom: 1px solid #f0f0f0;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .emoji-btn {
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: #f5f5f5;
+            border-radius: 8px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .emoji-btn:hover {
+            background: #e0e0e0;
+            transform: scale(1.15);
+        }
+
+        .emoji-btn.add-emoji {
+            color: #667eea;
+            font-size: 24px;
+        }
+
+        /* Context Menu Items */
+        .context-actions {
+            padding: 4px 0;
+        }
+
+        .context-action-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 14px;
+            color: #333;
+            width: 100%;
+            text-align: left;
+            transition: all 0.2s;
+        }
+
+        .context-action-item:hover {
+            background: #f5f5f5;
+            padding-left: 18px;
+        }
+
+        .context-action-item.danger {
+            color: #d32f2f;
+        }
+
+        .context-action-item.danger:hover {
+            background: #ffebee;
+        }
+
+        .context-action-icon {
+            font-size: 18px;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Scrollbar for messages */
+        .messages-area::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .messages-area::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .messages-area::-webkit-scrollbar-thumb {
+            background: #ddd;
+            border-radius: 3px;
+        }
+
+        .messages-area::-webkit-scrollbar-thumb:hover {
+            background: #bbb;
+        }
+
+        /* Input Area */
+        .input-area {
+            padding: 15px 20px;
+            background: #fff;
+            border-top: 1px solid #f0f0f0;
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .input-icons {
+            display: flex;
+            gap: 10px;
+            font-size: 20px;
+        }
+
+        .input-icons button {
+            background: none;
+            border: none;
+            color: #667eea;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .input-icons button:hover {
+            opacity: 0.7;
+            transform: scale(1.1);
+        }
+
+        .mic-btn.active {
+            color: #ff3b3b;
+            animation: pulse-mic 0.6s infinite;
+        }
+
+        @keyframes pulse-mic {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+        }
+
+        .voice-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: linear-gradient(135deg, #ff3b3b 0%, #ff6b6b 100%);
+            border-radius: 20px;
+            font-size: 13px;
+            color: white;
+            font-weight: 500;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 2px 8px rgba(255, 59, 59, 0.3);
+            margin: 0 20px;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .listening-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 49%, 100% {
+                opacity: 1;
+            }
+            50%, 99% {
+                opacity: 0.4;
+            }
+        }
+
+        /* Image Preview Styles */
+        .image-preview {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            margin: 10px 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid #667eea;
+            background: #f5f5f5;
+        }
+
+        .image-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .remove-image-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #ff3b3b;
+            color: white;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .remove-image-btn:hover {
+            background: #ff2020;
+            transform: scale(1.1);
+        }
+
+        .input-wrapper {
+            flex: 1;
+            display: flex;
+            gap: 10px;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 14px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            resize: none;
+            max-height: 100px;
+            transition: all 0.3s;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 8px rgba(0, 123, 255, 0.5);
+        }
+
+        .send-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #667eea;
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .send-btn:hover {
+            background: #667eea;
+            transform: scale(1.05);
+        }
+
+        .send-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* ==================== RESPONSIVE DESIGN ==================== */
+        @media (max-width: 768px) {
+            .left-panel {
+                width: 100%;
+                position: absolute;
+                left: 0;
+                top: 0;
+                height: 100vh;
+                z-index: 100;
+                display: none;
+            }
+
+            .left-panel.active {
+                display: flex;
+            }
+
+            .right-panel {
+                width: 100%;
+            }
+
+            .message-bubble {
+                max-width: 80%;
+            }
+
+            .messages-area {
+                padding: 10px;
+            }
+
+            .input-area {
+                padding: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .left-header h1 {
+                font-size: 18px;
+            }
+
+            .chat-header h2 {
+                font-size: 14px;
+            }
+
+            .message-bubble {
+                max-width: 90%;
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+
+            .contact-info {
+                width: 100%;
+            }
+
+            .contact-name {
+                font-size: 13px;
+            }
+
+            .contact-message {
+                font-size: 11px;
+            }
+        }
+
+        /* ==================== UTILITY CLASSES ==================== */
+        .hidden {
+            display: none !important;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 10px 15px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #999;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                opacity: 0.5;
+                transform: translateY(0);
+            }
+            30% {
+                opacity: 1;
+                transform: translateY(-10px);
+            }
+        }
+
+        .no-contacts {
+            padding: 40px 20px;
+            text-align: center;
+            color: #999;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <!-- ==================== MAIN CONTAINER ==================== -->
+    <div class="container">
+        
+        <!-- ==================== LEFT PANEL - CONTACTS ==================== -->
+        <div class="left-panel active" id="leftPanel">
+            <!-- Header -->
+            <div class="left-header">
+                <h1>💬 Chats</h1>
+                <div class="header-icons">
+                    <button id="newChatBtn" title="New Chat">➕</button>
+                    <div class="menu-container">
+                        <button id="menuBtn" title="Menu">⋮</button>
+                        <div class="menu-dropdown" id="menuDropdown">
+                            <button class="menu-item" id="newGroupBtn">
+                                <span>👥</span>
+                                <span>New group</span>
+                            </button>
+                            <button class="menu-item" id="starredBtn">
+                                <span>⭐</span>
+                                <span>Starred messages</span>
+                            </button>
+                            <button class="menu-item" id="selectChatsBtn">
+                                <span>✅</span>
+                                <span>Select chats</span>
+                            </button>
+                            <button class="menu-item" id="markReadBtn">
+                                <span>📋</span>
+                                <span>Mark all as read</span>
+                            </button>
+                            <button class="menu-item" id="appLockBtn">
+                                <span>🔒</span>
+                                <span>App lock</span>
+                            </button>
+                            <div class="menu-divider"></div>
+                            <button class="menu-item danger" id="logoutBtn">
+                                <span>🚪</span>
+                                <a href="{% url 'logout' %}" class="logout-btn">Logout</a>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search Box -->
+            <div class="search-container">
+                <input type="text" class="search-box" id="searchInput" placeholder="Search contacts...">
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="all">All</button>
+                <button class="tab-btn" data-tab="unread">Unread</button>
+                <button class="tab-btn" data-tab="favorites">Favorites</button>
+            </div>
+
+            <!-- Contacts List -->
+            <div class="contacts-list" id="contactsList">
+                <!-- Contacts will be dynamically inserted here -->
+            </div>
+        </div>
+
+        <!-- ==================== RIGHT PANEL - CHAT ==================== -->
+        <div class="right-panel">
+            <!-- Empty State (shown when no contact selected) -->
+            <div id="emptyState" class="empty-state">
+                <div>
+                    <div class="empty-state-icon">💬</div>
+                    <h3>ChatBoard Messaging</h3>
+                    <p>Select a contact to start chatting</p>
+                </div>
+            </div>
+
+            <!-- Chat Area (hidden by default) -->
+            <div id="chatArea" class="hidden" style="display: flex; flex-direction: column; height: 100%;">
+                <!-- Chat Header -->
+                <div class="chat-header">
+                    <div class="chat-header-info">
+                        <div class="chat-header-avatar" id="chatAvatar">🤖</div>
+                        <div class="chat-header-text">
+                            <h2 id="chatName">Contact Name</h2>
+                            <p id="chatStatus">online</p>
+                        </div>
+                    </div>
+                    <div class="chat-header-actions">
+                        <div class="user-avatar">Me-👨🏻‍🎓</div>
+
+                    </div>
+                </div>
+
+                <!-- Messages Area -->
+                <div class="messages-area" id="messagesArea">
+                    <!-- Messages will be dynamically inserted here -->
+                </div>
+
+                <!-- Input Area -->
+                <div class="input-area">
+                    <div class="input-icons">
+                        <input type="file" id="imageInput" accept="image/*" style="display: none;">
+                        <button id="attachBtn" title="Attach Image">📷</button>
+                        <button id="emojiBtn" title="Emoji">😊</button>
+                        <button id="micBtn" class="mic-btn" title="Voice message">🎤</button>
+                    </div>
+                    <div class="input-wrapper">
+                        <textarea class="message-input" id="messageInput" placeholder="Type a message..." rows="1"></textarea>
+                        <button class="send-btn" id="sendBtn">✓</button>
+                    </div>
+                    <div class="voice-status" id="voiceStatus" style="display: none;">
+                        <span class="listening-dot"></span> Listening...
+                    </div>
+                    <div class="image-preview" id="imagePreview" style="display: none;">
+                        <img id="previewImg" src="" alt="Preview">
+                        <button id="removeImageBtn" class="remove-image-btn" title="Remove Image">✕</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MESSAGE CONTEXT MENU ==================== -->
+    <div class="message-context-menu" id="messageContextMenu">
+        <!-- Emoji Reactions -->
+        <div class="context-reactions">
+            <button class="emoji-btn" data-emoji="👍" title="Like">👍</button>
+            <button class="emoji-btn" data-emoji="❤️" title="Love">❤️</button>
+            <button class="emoji-btn" data-emoji="😂" title="Funny">😂</button>
+            <button class="emoji-btn" data-emoji="😮" title="Wow">😮</button>
+            <button class="emoji-btn" data-emoji="😢" title="Sad">😢</button>
+            <button class="emoji-btn" data-emoji="🙏" title="Thanks">🙏</button>
+            <button class="emoji-btn add-emoji" title="More Emojis">+</button>
+        </div>
+
+        <!-- Action Items -->
+        <div class="context-actions">
+            <button class="context-action-item" id="contextReply">
+                <span class="context-action-icon">↩️</span>
+                <span>Reply</span>
+            </button>
+            <button class="context-action-item" id="contextCopy">
+                <span class="context-action-icon">📋</span>
+                <span>Copy</span>
+            </button>
+            <button class="context-action-item" id="contextForward">
+                <span class="context-action-icon">⇨</span>
+                <span>Forward</span>
+            </button>
+            <button class="context-action-item" id="contextPin">
+                <span class="context-action-icon">📌</span>
+                <span>Pin</span>
+            </button>
+            <button class="context-action-item" id="contextStar">
+                <span class="context-action-icon">⭐</span>
+                <span>Star</span>
+            </button>
+            <button class="context-action-item" id="contextSelect">
+                <span class="context-action-icon">✅</span>
+                <span>Select</span>
+            </button>
+            <button class="context-action-item danger" id="contextDelete">
+                <span class="context-action-icon">🗑️</span>
+                <span>Delete</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ==================== JAVASCRIPT ==================== -->
+    <script>
+        // ==================== DATA STRUCTURE ====================
+        /**
+         * AI Contacts Database
+         * Each contact has an ID, name, avatar, status, and chat history
+         */
+        const aiContacts = [
+            {
+                id: 1,
+                name: 'Study AI',
+                avatar: '📚',
+                status: 'online',
+                color: 'ai-1',
+                lastMessage: 'I recommend reviewing JavaScript functions and async/await patterns.',
+                messages: [
+                    { type: 'user', text: 'How do I learn JavaScript effectively?' }
+                ]
+            },
+            {
+                id: 2,
+                name: 'Code Helper',
+                avatar: '💻',
+                status: 'online',
+                color: 'ai-2',
+                lastMessage: 'That\'s a common issue. Check your error handling logic.',
+                messages: [
+                    { type: 'user', text: 'Can you help me debug this code?' }
+                ]
+            },
+            {
+                id: 3,
+                name: 'Interview AI',
+                avatar: '🎯',
+                status: 'online',
+                color: 'ai-3',
+                lastMessage: 'Focus on clear communication and structured thinking.',
+                messages: [
+                    { type: 'user', text: 'How do I prepare for interviews?' }
+                ]
+            },
+            {
+                id: 4,
+                name: 'ML Assistant',
+                avatar: '🤖',
+                status: 'online',
+                color: 'ai-4',
+                lastMessage: 'Neural networks are inspired by biological neurons. Let me explain...',
+                messages: [
+                    { type: 'user', text: 'What is a neural network?' }
+                ]
+            },
+            {
+                id: 5,
+                name: 'Design Bot',
+                avatar: '🎨',
+                status: 'offline',
+                color: 'ai-5',
+                lastMessage: 'Use the 60-30-10 color rule for harmony.',
+                messages: [
+                    { type: 'user', text: 'How do I choose colors for my design?' }
+                ]
+            },
+            {
+                id: 6,
+                name: 'Data Analyst',
+                avatar: '📊',
+                status: 'online',
+                color: 'ai-6',
+                lastMessage: 'Line charts show trends best.',
+                messages: [
+                    { type: 'user', text: 'What visualization should I use?' }
+                ]
+            },
+            {
+                id: 7,
+                name: 'Writing AI',
+                avatar: '✍️',
+                status: 'online',
+                color: 'ai-7',
+                lastMessage: 'Use active voice for stronger writing.',
+                messages: [
+                    { type: 'user', text: 'How do I improve my writing?' }
+                ]
+            },
+            {
+                id: 8,
+                name: 'Math Tutor',
+                avatar: '🔢',
+                status: 'offline',
+                color: 'ai-8',
+                lastMessage: 'Master algebra first, then move to calculus.',
+                messages: [
+                    { type: 'user', text: 'Help me understand algebra' }
+                ]
+            }
+        ];
+
+        // ==================== STATE MANAGEMENT ====================
+        let currentContact = null;
+        let isTyping = false;
+
+        // ==================== DOM ELEMENTS ====================
+        const leftPanel = document.getElementById('leftPanel');
+        const contactsList = document.getElementById('contactsList');
+        const messagesArea = document.getElementById('messagesArea');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const searchInput = document.getElementById('searchInput');
+        const emptyState = document.getElementById('emptyState');
+        const chatArea = document.getElementById('chatArea');
+        const chatName = document.getElementById('chatName');
+        const chatStatus = document.getElementById('chatStatus');
+        const chatAvatar = document.getElementById('chatAvatar');
+        const backBtn = document.getElementById('backBtn');
+
+        // ==================== INITIALIZE APP ====================
+        /**
+         * Initialize the application
+         * Load contacts and setup event listeners
+         */
+        function initApp() {
+            renderContacts();
+            setupEventListeners();
+            adjustTextarea();
+            initVoiceMessage();
+        }
+
+        // ==================== RENDER CONTACTS ====================
+        /**
+         * Render all AI contacts in the left sidebar
+         */
+        function renderContacts(filter = 'all', searchTerm = '') {
+            contactsList.innerHTML = '';
+
+            let filteredContacts = aiContacts.filter(contact => {
+                const matchesSearch = contact.name.toLowerCase().includes(searchTerm.toLowerCase());
+                const matchesFilter = filter === 'all';
+                return matchesSearch && matchesFilter;
+            });
+
+            if (filteredContacts.length === 0) {
+                contactsList.innerHTML = '<div class="no-contacts">No contacts found</div>';
+                return;
+            }
+
+            filteredContacts.forEach(contact => {
+                const contactEl = document.createElement('div');
+                contactEl.className = `contact-item ${currentContact?.id === contact.id ? 'active' : ''}`;
+                contactEl.innerHTML = `
+                    <div class="contact-avatar ${contact.color}">${contact.avatar}</div>
+                    <div class="contact-info">
+                        <div class="contact-name" data-contact-id="${contact.id}">${contact.name}</div>
+                        <div class="contact-message">${contact.lastMessage}</div>
+                    </div>
+                    <div class="contact-time">Now</div>
+                `;
+                
+                // Single click - select contact
+                contactEl.addEventListener('click', () => selectContact(contact));
+                
+                // Double-click on contact name - delete contact
+                const contactNameEl = contactEl.querySelector('.contact-name');
+                contactNameEl.addEventListener('dblclick', (e) => {
+                    e.stopPropagation();
+                    if (confirm(`Delete ${contact.name}?`)) {
+                        aiContacts = aiContacts.filter(c => c.id !== contact.id);
+                        
+                        // If deleted contact was active, show empty state
+                        if (currentContact?.id === contact.id) {
+                            currentContact = null;
+                            emptyState.classList.remove('hidden');
+                            chatArea.classList.add('hidden');
+                            searchContacts('');
+                        } else {
+                            renderContacts(filterText);
+                        }
+                    }
+                });
+                
+                contactsList.appendChild(contactEl);
+            });
+        }
+
+        // ==================== SELECT CONTACT ====================
+        /**
+         * Select a contact and display their chat
+         */
+        function selectContact(contact) {
+            currentContact = contact;
+            
+            // Update UI
+            emptyState.classList.add('hidden');
+            chatArea.classList.remove('hidden');
+            
+            // Update header
+            chatName.textContent = contact.name;
+            chatStatus.textContent = contact.status;
+            chatAvatar.textContent = contact.avatar;
+            
+            // Render messages
+            renderMessages();
+            
+            // Update contact list
+            renderContacts();
+            
+            // Hide left panel on mobile
+            if (window.innerWidth <= 768) {
+                leftPanel.classList.remove('active');
+                backBtn.style.display = 'block';
+            }
+            
+            // Focus input
+            messageInput.focus();
+            
+            // Scroll to bottom
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
+
+        // ==================== RENDER MESSAGES ====================
+        /**
+         * Render all messages for current contact with reactions
+         */
+        function renderMessages() {
+            messagesArea.innerHTML = '';
+            
+            if (!currentContact || currentContact.messages.length === 0) {
+                messagesArea.innerHTML = '<div class="no-contacts">No messages yet. Say hello!</div>';
+                return;
+            }
+
+            currentContact.messages.forEach((msg, index) => {
+                const messageEl = document.createElement('div');
+                messageEl.className = `message ${msg.type}`;
+                messageEl.setAttribute('data-msg-index', index);
+                
+                // Build message content (text + image)
+                let contentHTML = '';
+                
+                // Add image if present
+                if (msg.image) {
+                    contentHTML += `<div class="message-image"><img src="${msg.image}" alt="Image"></div>`;
+                }
+                
+                // Add text if present
+                if (msg.text) {
+                    const formattedText = msg.text
+                        .split('\n\n')  // Split by double newline for paragraphs
+                        .map(para => {
+                            return '<p>' + para
+                                .split('\n')  // Split by single newline
+                                .join('<br>')  // Replace with HTML line break
+                                + '</p>';
+                        })
+                        .join('');
+                    contentHTML += `<div class="message-bubble">${formattedText}</div>`;
+                }
+                
+                // Initialize reactions storage if not present
+                if (!msg.reactions) {
+                    msg.reactions = {};
+                }
+                
+                // Build reactions HTML
+                let reactionsHTML = '';
+                if (Object.keys(msg.reactions).length > 0) {
+                    reactionsHTML = '<div class="message-emoji-reactions">';
+                    for (const [emoji, count] of Object.entries(msg.reactions)) {
+                        reactionsHTML += `
+                            <div class="emoji-reaction" data-emoji="${emoji}" data-msg-index="${index}">
+                                <span class="emoji-reaction-emoji">${emoji}</span>
+                                <span class="emoji-reaction-count">${count}</span>
+                            </div>
+                        `;
+                    }
+                    reactionsHTML += '</div>';
+                }
+                
+                messageEl.innerHTML = `
+                    <div class="message-wrapper">
+                        ${contentHTML}
+                        <div class="message-time">${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</div>
+                        <div class="message-reactions-container">
+                            <button class="reaction-btn" data-emoji="👍" data-msg-index="${index}">👍</button>
+                            <button class="reaction-btn" data-emoji="❤️" data-msg-index="${index}">❤️</button>
+                            <button class="reaction-btn" data-emoji="😂" data-msg-index="${index}">😂</button>
+                        </div>
+                        ${reactionsHTML}
+                    </div>
+                `;
+                messagesArea.appendChild(messageEl);
+            });
+
+            // Add reaction event listeners
+            addReactionListeners();
+            
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
+
+        /**
+         * Handle message reactions
+         */
+        function addReactionListeners() {
+            // Reaction button clicks
+            document.querySelectorAll('.reaction-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const emoji = btn.getAttribute('data-emoji');
+                    const msgIndex = parseInt(btn.getAttribute('data-msg-index'));
+                    
+                    const message = currentContact.messages[msgIndex];
+                    if (!message.reactions) {
+                        message.reactions = {};
+                    }
+                    
+                    if (message.reactions[emoji]) {
+                        message.reactions[emoji]++;
+                    } else {
+                        message.reactions[emoji] = 1;
+                    }
+                    
+                    renderMessages();
+                });
+            });
+            
+            // Reaction count clicks (toggle reaction)
+            document.querySelectorAll('.emoji-reaction').forEach(reactionEl => {
+                reactionEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const emoji = reactionEl.getAttribute('data-emoji');
+                    const msgIndex = parseInt(reactionEl.getAttribute('data-msg-index'));
+                    
+                    const message = currentContact.messages[msgIndex];
+                    if (message.reactions[emoji] > 1) {
+                        message.reactions[emoji]--;
+                    } else {
+                        delete message.reactions[emoji];
+                    }
+                    
+                    renderMessages();
+                });
+            });
+        }
+
+        // ==================== SEND MESSAGE ====================
+        /**
+         * Send user message and get AI response
+         */
+        function sendMessage() {
+            const text = messageInput.value.trim();
+            const imageInput = document.getElementById('imageInput');
+            const imagePreview = document.getElementById('imagePreview');
+            const previewImg = document.getElementById('previewImg');
+            
+            if ((!text && !previewImg.src) || !currentContact) return;
+
+            // Create message object
+            const messageObj = {
+                type: 'user',
+                text: text
+            };
+
+            // Add image if present
+            if (previewImg.src) {
+                messageObj.image = previewImg.src;
+            }
+
+            // Add user message
+            currentContact.messages.push(messageObj);
+
+            // Clear input
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+            
+            // Clear image preview
+            previewImg.src = '';
+            imagePreview.style.display = 'none';
+            imageInput.value = '';
+
+            // Re-render messages
+            renderMessages();
+
+            // Simulate AI typing
+            showTypingIndicator();
+
+            // Get AI response after 1 second
+            setTimeout(() => {
+                getAIResponse(text);
+            }, 1000);
+        }
+
+        // ==================== AI RESPONSE GENERATORS ====================
+        /**
+         * Study AI - Intelligent Learning Assistant
+         */
+        function generateStudyAIResponse(msg, original) {
+            if (msg.includes('javascript') || msg.includes('js')) {
+                return 'JavaScript is the language of web development. Here are key concepts:\n\n• Variables: var, let, const\n• Data types: string, number, boolean, array, object\n• Functions: declarations, arrow functions, async\n• DOM: selecting, manipulating, event listeners\n• Async: promises, async/await\n\nStart with basics, then practice building projects. What specific topic would you like to explore?';
+            } else if (msg.includes('python')) {
+                return 'Python is great for beginners and professionals! Key areas:\n\n• Data types: strings, lists, tuples, dictionaries, sets\n• Control flow: if/else, loops, comprehensions\n• Functions: def, parameters, return values\n• Libraries: NumPy, Pandas, Matplotlib, Django\n• OOP: classes, inheritance, polymorphism\n\nStart with basic syntax and build small projects. Any specific Python topic?';
+            } else if (msg.includes('c++') || msg.includes('c#')) {
+                return 'C++ and C# are powerful languages for system and application development.\n\nC++: Object-oriented, used for games, system software, performance-critical apps\nC#: Managed code, used for Unity games, Windows applications, ASP.NET\n\nFocus on: variables, data structures, OOP principles, algorithms. What\'s your goal?';
+            } else if (msg.includes('html') || msg.includes('css')) {
+                return 'HTML & CSS are the foundation of web development!\n\nHTML (Structure):\n• Semantic elements: header, nav, main, footer, article, section\n• Forms: input, textarea, buttons, validation\n• Accessibility: alt text, ARIA labels, semantic HTML\n\nCSS (Styling):\n• Selectors, box model, flexbox, grid\n• Animations, transitions, responsive design\n• Variables, media queries, preprocessing\n\nWhat aspect would you like to learn?';
+            } else if (msg.includes('react') || msg.includes('vue') || msg.includes('angular')) {
+                return 'Modern frontend frameworks make web development efficient!\n\nReact: Component-based, virtual DOM, JSX, hooks\nVue: Progressive, simple syntax, reactive data\nAngular: Full framework, TypeScript, enterprise-ready\n\n• Components, props, state management\n• Routing, lifecycle methods\n• Best practices and patterns\n\nWhich framework interests you?';
+            } else if (msg.includes('database') || msg.includes('sql')) {
+                return 'Databases are crucial for data-driven applications!\n\nSQL (Relational):\n• Tables, rows, columns, primary/foreign keys\n• CRUD: CREATE, READ, UPDATE, DELETE\n• JOINs, GROUP BY, aggregate functions\n• Normalization, indexing\n\nNoSQL (Document):\n• MongoDB, Firebase, DynamoDB\n• Flexible schema, scalability\n\nStart with SQL basics. What database interests you?';
+            } else if (msg.includes('how to learn') || msg.includes('learning strategy')) {
+                return 'Effective learning strategy:\n\n1. **Understanding**: Read, watch tutorials, understand concepts\n2. **Practice**: Code along, solve problems, build projects\n3. **Projects**: Build real things, combine concepts\n4. **Review**: Check mistakes, refactor, learn from errors\n5. **Teach**: Explain to others, write blogs, help others\n6. **Consistency**: 1-2 hours daily beats cramming\n\nTips:\n• Start simple, gradually increase difficulty\n• Use multiple resources (docs, YouTube, courses)\n• Join communities, code with others\n• Build portfolio projects\n\nWhat subject do you want to learn?';
+            } else {
+                return 'I can help you learn programming, web development, databases, and many other technical subjects!\n\nTry asking about:\n• Specific languages: Python, JavaScript, C++, Java\n• Web technologies: HTML, CSS, React, Vue, Angular\n• Databases: SQL, MongoDB, Firebase\n• Concepts: OOP, algorithms, data structures\n• Learning strategies and best practices\n\nWhat would you like to learn?';
+            }
+        }
+
+        /**
+         * Code Helper - Programming Assistance
+         */
+        function generateCodeHelperResponse(msg, original) {
+            if (msg.includes('error') || msg.includes('bug') || msg.includes('undefined') || msg.includes('error')) {
+                return 'Debugging Guide:\n\n1. **Read the error message carefully**\n   • Error type: TypeError, ReferenceError, SyntaxError?\n   • Line number where error occurred\n   • Full error message context\n\n2. **Common JavaScript errors**:\n   • TypeError: variable is not a function (function not defined)\n   • ReferenceError: variable is not defined (typo or scope issue)\n   • SyntaxError: check brackets, quotes, semicolons\n\n3. **Debugging tools**:\n   • console.log() for variable inspection\n   • Browser DevTools (F12)\n   • Debugger breakpoints\n   • Stack trace analysis\n\n4. **Steps to fix**:\n   • Isolate the problem (which line?)\n   • Check variable types\n   • Verify function calls\n   • Search error online\n\nShare your error message and I\'ll help!';
+            } else if (msg.includes('function') || msg.includes('method')) {
+                return 'Functions are reusable blocks of code!\n\n**JavaScript Function Types**:\n\n1. Function Declaration:\n```javascript\nfunction greet(name) {\n    return `Hello, ${name}!`;\n}\n```\n\n2. Arrow Function:\n```javascript\nconst greet = (name) => `Hello, ${name}!`;\n```\n\n3. Anonymous Function:\n```javascript\nconst add = function(a, b) { return a + b; };\n```\n\n**Best Practices**:\n• Clear, descriptive names\n• Single responsibility\n• Pure functions (no side effects)\n• Proper documentation\n\nNeed help with a specific function?';
+            } else if (msg.includes('loop') || msg.includes('iteration')) {
+                return 'Loops iterate through data!\n\n**Loop Types**:\n\n1. **for loop** (known iterations):\n```javascript\nfor (let i = 0; i < 5; i++) { console.log(i); }\n```\n\n2. **while loop** (unknown iterations):\n```javascript\nwhile (condition) { /* code */ }\n```\n\n3. **forEach** (array iteration):\n```javascript\narr.forEach(item => console.log(item));\n```\n\n4. **map/filter/reduce** (functional):\n```javascript\nconst doubled = arr.map(x => x * 2);\nconst filtered = arr.filter(x => x > 5);\n```\n\n**When to use**:\n• for: when you know iterations\n• forEach: simple iteration\n• map/filter: transforming data\n\nWhat type of iteration do you need?';
+            } else if (msg.includes('variable') || msg.includes('scope')) {
+                return 'Variables store data!\n\n**Variable Declaration**:\n\n```javascript\nvar x = 5;      // function-scoped (old)\nlet y = 10;     // block-scoped (modern)\nconst z = 15;   // constant (can\'t change)\n```\n\n**Scope Rules**:\n\n• Global: accessible everywhere\n• Function: accessible within function\n• Block: accessible within {} (let, const)\n• Lexical: inner function accesses outer variables\n\n**Best Practices**:\n• Use `const` by default\n• Use `let` if you need to reassign\n• Avoid `var` (outdated)\n• Be aware of scope\n\n**Common Issue: Scope Leak**:\n```javascript\nfor (var i = 0; i < 5; i++) { /* */ }\nconsole.log(i); // 5 - leaked!\n```\nUse `let` instead!\n\nQuestions about variables?';
+            } else if (msg.includes('api') || msg.includes('fetch') || msg.includes('axios')) {
+                return 'APIs allow apps to communicate!\n\n**Making API Requests**:\n\n1. **Fetch API** (built-in):\n```javascript\nfetch(\'https://api.example.com/data\')\n    .then(res => res.json())\n    .then(data => console.log(data))\n    .catch(err => console.error(err));\n```\n\n2. **Async/Await** (cleaner):\n```javascript\nconst getData = async () => {\n    try {\n        const res = await fetch(\'url\');\n        const data = await res.json();\n        return data;\n    } catch (err) {\n        console.error(err);\n    }\n};\n```\n\n**HTTP Methods**:\n• GET: fetch data\n• POST: send data\n• PUT: update entire resource\n• PATCH: update partial\n• DELETE: remove data\n\nNeed help with a specific API?';
+            } else if (msg.includes('clean code') || msg.includes('best practice')) {
+                return 'Clean Code Principles:\n\n1. **Naming**:\n   • Use descriptive variable/function names\n   • Avoid single-letter variables (except loop counters)\n   • Use camelCase for JS\n\n2. **Functions**:\n   • Small, focused, single responsibility\n   • Max 20-30 lines\n   • Clear parameters and return types\n\n3. **Comments**:\n   • Explain WHY, not WHAT\n   • Keep comments updated\n   • Use JSDoc for functions\n\n4. **Structure**:\n   • Consistent indentation\n   • Proper spacing\n   • Avoid deeply nested code\n\n5. **Testing**:\n   • Write unit tests\n   • Test edge cases\n   • Use testing frameworks\n\n6. **Version Control**:\n   • Meaningful commit messages\n   • Small, focused commits\n   • Use branches for features\n\nWhat aspect would you like to improve?';
+            } else {
+                return 'I can help with coding issues! Ask me about:\n\n• Debugging errors and bugs\n• JavaScript functions, loops, variables\n• API calls and data fetching\n• HTML/CSS/JavaScript best practices\n• Code optimization and clean code\n• Design patterns and architecture\n• Testing and debugging tools\n• Problem-solving approaches\n\nShare your code or question and I\'ll help!';
+            }
+        }
+
+        /**
+         * Interview AI - Interview Preparation
+         */
+        function generateInterviewAIResponse(msg, original) {
+            if (msg.includes('coding') || msg.includes('leetcode') || msg.includes('algorithm')) {
+                return 'Coding Interview Preparation:\n\n**Topics to Master**:\n• Arrays and strings\n• Linked lists\n• Trees and graphs\n• Sorting and searching\n• Dynamic programming\n• Hash tables\n• Heaps and priority queues\n\n**Approach**:\n1. Understand the problem\n2. Ask clarifying questions\n3. Think of examples\n4. Plan your approach\n5. Code clean solution\n6. Test and optimize\n7. Discuss time/space complexity\n\n**Platforms**:\n• LeetCode (most popular)\n• HackerRank\n• CodeSignal\n• InterviewBit\n\n**Tips**:\n• Practice 50-100 problems\n• Focus on patterns\n• Write clean code\n• Communicate while coding\n\nWhich topic should you focus on?';
+            } else if (msg.includes('behavioral') || msg.includes('star method') || msg.includes('question')) {
+                return 'Behavioral Interview Guide (STAR Method):\n\n**STAR = Situation, Task, Action, Result**\n\nExample Question: "Tell me about a time you overcame a challenge"\n\n• **Situation**: Set the context (project, challenge, timeline)\n• **Task**: Explain your responsibility\n• **Action**: Describe specific steps YOU took (not team)\n• **Result**: Share measurable outcomes\n\n**Prepare 7-10 Stories**:\n1. Leadership experience\n2. Conflict resolution\n3. Failure and learning\n4. Teamwork\n5. Innovation/improvement\n6. Tight deadline\n7. Difficult customer/stakeholder\n\n**Common Questions**:\n• "Tell me about yourself"\n• "Why do you want this role?"\n• "What\'s your greatest weakness?"\n• "Why are you leaving your current job?"\n\n**Tips**:\n• Keep stories 2-3 minutes\n• Quantify results (numbers, percentages)\n• Show problem-solving\n• Be authentic\n• Practice out loud\n\nWhat stories can you prepare?';
+            } else if (msg.includes('salary') || msg.includes('negotiate') || msg.includes('offer')) {
+                return 'Salary Negotiation Guide:\n\n**Before Interview**:\n1. Research salary ranges\n   • Glassdoor, Levels.fyi, PayScale\n   • Same role, same location\n   • Include benefits, stock\n\n2. Know your value\n   • Years of experience\n   • Skills and expertise\n   • Market demand\n   • Your minimum acceptable salary\n\n**During Offer**:\n1. Don\'t mention salary first\n2. Ask: "What\'s the range for this role?"\n3. Thank them for offer\n4. Take time to consider\n5. Counter professionally\n\n**Negotiation Tips**:\n• Be respectful, not demanding\n• Justify your number with data\n• Negotiate total package (salary + bonus + stock + PTO)\n• Get everything in writing\n• Don\'t accept immediately\n\n**Template**:\n"I appreciate the offer. Based on my experience and market research, I\'m looking for $X. Can we discuss?"\n\nWhat salary range are you targeting?';
+            } else if (msg.includes('company') || msg.includes('research')) {
+                return 'Company Research Before Interview:\n\n**What to Research**:\n1. **Company Overview**\n   • Mission, vision, values\n   • Products/services\n   • Recent news, funding\n   • Company culture\n\n2. **Financial Health**\n   • Revenue, growth rate\n   • Profitability\n   • Stock price (if public)\n\n3. **Market Position**\n   • Competitors\n   • Market share\n   • Industry trends\n\n4. **Team & Leadership**\n   • Leadership team bios\n   • Your manager (if known)\n   • Company size, growth\n\n5. **Role-Specific**\n   • Team structure\n   • Recent projects\n   • Technical stack\n\n**Where to Research**:\n• Company website and blog\n• LinkedIn company page\n• Glassdoor (reviews)\n• Crunchbase (funding)\n• Industry reports\n• YouTube (company videos)\n\n**Questions to Ask**:\n• "What\'s the biggest challenge your team faces?"\n• "How does this role contribute to goals?"\n• "What\'s the team culture like?"\n\nWhat company are you interviewing for?';
+            } else if (msg.includes('prepare') || msg.includes('tips') || msg.includes('help')) {
+                return 'Interview Preparation Checklist:\n\n**Before Interview** (1-2 weeks):\n☐ Research company thoroughly\n☐ Practice STAR stories\n☐ Mock interviews with friends\n☐ Review job description\n☐ Prepare thoughtful questions\n☐ Practice technical problems\n\n**Day Before**:\n☐ Check location/video call setup\n☐ Plan outfit (professional)\n☐ Prepare materials (resume, portfolio)\n☐ Get good sleep\n\n**Morning Of**:\n☐ Light breakfast\n☐ Review key points\n☐ Arrive 10-15 min early\n☐ Take deep breaths\n\n**During Interview**:\n☐ Firm handshake/confident greeting\n☐ Maintain eye contact\n☐ Listen carefully\n☐ Answer thoroughly but concisely\n☐ Ask thoughtful questions\n☐ Show enthusiasm\n\n**Key Points**:\n• Be authentic\n• Show problem-solving\n• Ask questions\n• Follow up within 24 hours\n\nWhich area do you want to focus on?';
+            } else {
+                return 'I can help with interview preparation! Topics include:\n\n• Coding interviews (algorithms, data structures)\n• Behavioral questions (STAR method)\n• Salary negotiation\n• Company research\n• Technical interviews\n• System design\n• Interview tips and strategies\n• Mock interview practice\n• Follow-up emails\n\nWhat\'s your biggest concern for the interview?';
+            }
+        }
+
+        /**
+         * ML Assistant - Machine Learning Expert
+         */
+        function generateMLResponse(msg, original) {
+            if (msg.includes('what is') || msg.includes('explain') || msg.includes('define')) {
+                return 'Machine Learning Explained:\n\nML is about creating systems that learn from data!\n\n**Three Main Types**:\n\n1. **Supervised Learning** (labeled data)\n   • Classification: predict categories (spam/not spam)\n   • Regression: predict numbers (price prediction)\n   • Examples: email filtering, house price prediction\n\n2. **Unsupervised Learning** (unlabeled data)\n   • Clustering: group similar items\n   • Dimensionality reduction: reduce features\n   • Examples: customer segmentation, image compression\n\n3. **Reinforcement Learning** (learn through rewards)\n   • Agent learns by trial and error\n   • Rewards for good actions\n   • Examples: game AI, robot control\n\n**Key Concepts**:\n• Training data: historical data\n• Features: input variables\n• Labels: desired outputs\n• Model: mathematical representation\n• Prediction: output on new data\n\nWhat type interests you?';
+            } else if (msg.includes('algorithm') || msg.includes('model')) {
+                return 'Popular ML Algorithms:\n\n**Supervised Learning**:\n\n1. **Regression**:\n   • Linear Regression: predict continuous values\n   • Polynomial Regression: non-linear relationships\n\n2. **Classification**:\n   • Logistic Regression: binary classification\n   • Decision Trees: interpretable, rule-based\n   • Random Forest: ensemble of trees\n   • SVM: support vector machines\n   • Naive Bayes: probability-based\n\n**Unsupervised Learning**:\n   • K-Means: partition into k clusters\n   • Hierarchical Clustering: build cluster hierarchy\n   • DBSCAN: density-based clustering\n\n**Neural Networks**:\n   • Perceptron: single neuron\n   • MLP: multiple layers\n   • CNN: for images\n   • RNN: for sequences\n   • Transformers: for NLP\n\n**Choosing Algorithm**:\n• Nature of data (tabular, image, text)\n• Problem type (classification, regression)\n• Interpretability needs\n• Computational resources\n\nWhich algorithm should you learn?';
+            } else if (msg.includes('data') || msg.includes('preprocessing') || msg.includes('clean')) {
+                return 'Data Preparation for ML:\n\nQuality data = Quality models!\n\n**Data Cleaning** (80% of time):\n\n1. **Handle Missing Values**:\n   • Remove rows (if few missing)\n   • Fill with mean/median/mode\n   • Forward/backward fill for time series\n   • Predictive imputation\n\n2. **Remove Outliers**:\n   • Z-score method\n   • IQR method\n   • Visual inspection\n   • Domain knowledge\n\n3. **Fix Duplicates**:\n   • Remove exact duplicates\n   • Handle near-duplicates\n\n**Feature Engineering**:\n\n1. **Scaling/Normalization**:\n   • Min-Max scaling: [0, 1]\n   • Standardization: mean=0, std=1\n   • Important for distance-based algorithms\n\n2. **Feature Encoding**:\n   • One-hot encoding: categorical to binary\n   • Label encoding: categorical to numbers\n   • Ordinal encoding: ranked categories\n\n3. **Feature Creation**:\n   • Derive new features from existing\n   • Domain knowledge helps\n\n**Best Practices**:\n• Train/validation/test split\n• Scale before splitting\n• Document cleaning steps\n• Version control data\n\nWhat data are you working with?';
+            } else if (msg.includes('training') || msg.includes('overfitting') || msg.includes('underfitting')) {
+                return 'Model Training & Evaluation:\n\n**Train-Validation-Test Split**:\n• Training (60-70%): train the model\n• Validation (15-20%): tune hyperparameters\n• Test (15-20%): final evaluation\n\n**Overfitting** (memorizing training data):\n• Model performs well on training, poor on test\n• Causes: too complex, too long training\n• Solutions:\n  - Regularization (L1, L2)\n  - Early stopping\n  - Cross-validation\n  - More training data\n  - Simpler model\n\n**Underfitting** (too simple):\n• Model performs poorly on both sets\n• Causes: too simple model, insufficient training\n• Solutions:\n  - More complex model\n  - Train longer\n  - Better features\n\n**Evaluation Metrics**:\n\n• **Classification**:\n  - Accuracy: correct predictions\n  - Precision: false positives\n  - Recall: false negatives\n  - F1-Score: balance precision/recall\n\n• **Regression**:\n  - MAE: mean absolute error\n  - RMSE: root mean squared error\n  - R²: explained variance\n\n**Cross-Validation**:\n• K-fold: split into k parts\n• Stratified: maintain class balance\n• Time-series: respect temporal order\n\nHow\'s your model performing?';
+            } else {
+                return 'I can help with machine learning! Ask about:\n\n• ML concepts and theory\n• Algorithm selection and comparison\n• Data preparation and cleaning\n• Feature engineering\n• Model training and evaluation\n• Overfitting/underfitting\n• Neural networks and deep learning\n• Tools: TensorFlow, scikit-learn, PyTorch\n• Real-world ML projects\n\nWhat ML topic would you like to learn?';
+            }
+        }
+
+        /**
+         * Design Bot - UI/UX Design Expert
+         */
+        function generateDesignResponse(msg, original) {
+            if (msg.includes('color') || msg.includes('palette') || msg.includes('theme')) {
+                return 'Color Theory for Design:\n\n**Color Psychology**:\n• Red: energy, passion, urgency\n• Blue: trust, calm, professional\n• Green: growth, nature, balance\n• Yellow: happy, optimistic, friendly\n• Purple: creative, luxury, wise\n• Orange: fun, friendly, energetic\n• Black: elegance, power, sophistication\n• White: clean, minimal, simple\n\n**Creating Color Schemes**:\n\n1. **Monochromatic**: variations of one color\n   - Cohesive, easy to use\n   - Risk: boring\n\n2. **Complementary**: opposite colors\n   - High contrast, vibrant\n   - Risk: too intense\n\n3. **Analogous**: adjacent colors\n   - Harmonious, pleasing\n   - Risk: low contrast\n\n4. **Triadic**: 3 equally-spaced colors\n   - Balanced, vibrant\n   - Risk: complex\n\n**Accessibility**:\n• Contrast ratio ≥ 4.5:1 for text\n• Don\'t rely only on color\n• Test with color-blind simulator\n\n**Tools**:\n• Coolors.co: color palette generator\n• Adobe Color: professional palettes\n• Paletton: color scheme builder\n\nWhat\'s your design project?';
+            } else if (msg.includes('ui') || msg.includes('layout') || msg.includes('hierarchy')) {
+                return 'UI Design Principles:\n\n**Visual Hierarchy**:\n1. Size: larger = more important\n2. Color: vibrant = attention-grabbing\n3. Contrast: high contrast draws eye\n4. Position: top/left first\n5. Whitespace: isolation = emphasis\n6. Typography: bold, size variations\n\n**Layout Principles**:\n\n1. **Balance**:\n   - Symmetrical: formal, stable\n   - Asymmetrical: dynamic, modern\n\n2. **Alignment**:\n   - Consistent alignment = organized\n   - Use grid systems (8px, 12px)\n\n3. **Spacing**:\n   - Consistent spacing = professional\n   - Use spacing scale\n   - Breathing room around elements\n\n4. **Proximity**:\n   - Group related items\n   - Separate unrelated items\n\n**Design Systems**:\n• Consistent components\n• Reusable patterns\n• Design tokens\n• Documentation\n\n**Popular Grid Systems**:\n• 12-column grid\n• 8-point grid\n• Baseline grid\n\n**Tools**:\n• Figma: design and prototype\n• Adobe XD: design and animation\n• Sketch: macOS design tool\n\nWhat are you designing?';
+            } else if (msg.includes('responsive') || msg.includes('mobile') || msg.includes('breakpoint')) {
+                return 'Responsive Design Guide:\n\n**Mobile-First Approach**:\n1. Design for mobile first\n2. Add complexity for larger screens\n3. Progressive enhancement\n\n**Common Breakpoints**:\n• Mobile: < 640px\n• Tablet: 640px - 1024px\n• Desktop: > 1024px\n\n**Responsive Strategies**:\n\n1. **Fluid Layouts**:\n   - Percentage-based widths\n   - Flexible containers\n   - Adapt to screen size\n\n2. **Media Queries**:\n   ```css\n   @media (max-width: 768px) {\n       /* mobile styles */\n   }\n   ```\n\n3. **Flexible Images**:\n   - max-width: 100%\n   - Responsive images\n   - SVG for scalability\n\n4. **Typography**:\n   - Readable on all sizes\n   - Scale font sizes\n   - Line-height matters\n\n**Testing**:\n• Device emulation\n• Real device testing\n• Browser DevTools\n• Responsive design testing tools\n\n**Touch Design**:\n• Larger buttons (44-48px minimum)\n• More spacing\n• Avoid hover-dependent interactions\n\nWhat devices are you targeting?';
+            } else if (msg.includes('typography') || msg.includes('font')) {
+                return 'Typography in Design:\n\n**Font Selection**:\n\n1. **Serif Fonts** (traditional):\n   - Georgia, Times New Roman\n   - Use: books, formal documents\n\n2. **Sans-serif** (modern, clean):\n   - Arial, Helvetica, Verdana\n   - Use: web, UI, modern designs\n\n3. **Script** (decorative):\n   - Handwritten look\n   - Use: headers, special occasions\n\n4. **Monospace** (coding):\n   - Courier, Roboto Mono\n   - Use: code, technical\n\n**Font Pairing**:\n• Serif + Sans-serif (classic)\n• Sans + Sans with contrast (modern)\n• Limit to 2-3 fonts\n• Ensure readability together\n\n**Typography Scale**:\nCreate consistent sizing:\n• h1: 32px\n• h2: 24px\n• h3: 20px\n• Body: 16px\n• Small: 14px\n\n**Best Practices**:\n• Line-height: 1.5-1.6 (readability)\n• Line length: 50-75 characters\n• Color contrast: WCAG AA standard\n• Font weights: 2-3 weights max\n\n**Web Fonts**:\n• Google Fonts (free)\n• Adobe Fonts (subscription)\n• Font files (self-hosted)\n\nWhat\'s your design style?';
+            } else {
+                return 'I can help with UI/UX design! Topics:\n\n• Color theory and palettes\n• Layout and hierarchy\n• Responsive design\n• Typography\n• Accessibility (WCAG)\n• Design systems\n• Prototyping\n• User research\n• Wireframing\n• Interaction design\n• Design tools (Figma, Adobe XD)\n\nWhat design problem can I help with?';
+            }
+        }
+
+        /**
+         * Data Analyst - Data Analysis Expert
+         */
+        function generateDataAnalystResponse(msg, original) {
+            if (msg.includes('analysis') || msg.includes('insight')) {
+                return 'Data Analysis Process:\n\n**6-Step Framework**:\n\n1. **Define Question**:\n   • What are we solving?\n   • What data do we need?\n   • Success metrics?\n\n2. **Collect Data**:\n   • Databases, APIs, files\n   • Ensure data quality\n   • Document sources\n\n3. **Clean Data** (most time!):\n   • Remove duplicates\n   • Handle missing values\n   • Fix inconsistencies\n   • Standardize formats\n\n4. **Analyze**:\n   • Exploratory analysis (EDA)\n   • Statistical analysis\n   • Find patterns, trends\n   • Hypothesis testing\n\n5. **Visualize**:\n   • Charts, graphs, dashboards\n   • Tell the story\n   • Make insights clear\n\n6. **Report**:\n   • Executive summary\n   • Key findings\n   • Recommendations\n   • Supporting data\n\n**Tools**:\n• Excel: pivot tables, VLOOKUP\n• SQL: query data\n• Python/R: analysis\n• Tableau/Power BI: visualization\n• Google Analytics: web data\n\nWhat data are you analyzing?';
+            } else if (msg.includes('excel') || msg.includes('pivot') || msg.includes('vlookup')) {
+                return 'Excel for Data Analysis:\n\n**Essential Functions**:\n\n1. **VLOOKUP** (vertical lookup):\n   ```\n   =VLOOKUP(lookup_value, table_array, col_index, FALSE)\n   ```\n   • Find value in left column\n   • Return value from right column\n\n2. **COUNTIF/SUMIF**:\n   ```\n   =COUNTIF(range, criteria)\n   =SUMIF(range, criteria, sum_range)\n   ```\n\n3. **INDEX/MATCH** (better than VLOOKUP):\n   ```\n   =INDEX(return_array, MATCH(lookup_value, lookup_array, 0))\n   ```\n\n4. **Pivot Tables**:\n   • Summarize data quickly\n   • Group and aggregate\n   • Find patterns\n\n**Steps for Pivot Table**:\n1. Select data range\n2. Insert > Pivot Table\n3. Drag fields to rows/columns/values\n4. Apply filters\n5. Create charts\n\n**Data Cleaning**:\n• Remove duplicates\n• Format as table\n• Find & Replace\n• Text to Columns\n\n**Charts & Visualization**:\n• Column/Bar: comparisons\n• Line: trends\n• Pie: proportions\n• Scatter: correlations\n\nWhat Excel task do you need help with?';
+            } else if (msg.includes('sql') || msg.includes('query') || msg.includes('database')) {
+                return 'SQL for Data Analysis:\n\n**Basic Syntax**:\n\n```sql\nSELECT column1, column2\nFROM table_name\nWHERE condition\nGROUP BY column\nORDER BY column;\n```\n\n**Key Clauses**:\n\n1. **SELECT**: choose columns\n2. **FROM**: source table\n3. **WHERE**: filter rows\n4. **GROUP BY**: aggregate data\n5. **HAVING**: filter groups\n6. **ORDER BY**: sort results\n7. **LIMIT**: limit rows\n\n**Joins**:\n```sql\n-- INNER JOIN: matching rows\nSELECT * FROM table1\nINNER JOIN table2\nON table1.id = table2.id;\n\n-- LEFT JOIN: all from left table\nSELECT * FROM table1\nLEFT JOIN table2 ON ...\n```\n\n**Aggregate Functions**:\n• COUNT(): count rows\n• SUM(): total\n• AVG(): average\n• MAX/MIN(): highest/lowest\n\n**Common Patterns**:\n\n1. **Monthly sales**:\n   ```sql\n   SELECT DATE_TRUNC(\'month\', date), SUM(amount)\n   GROUP BY DATE_TRUNC(\'month\', date);\n   ```\n\n2. **Top customers**:\n   ```sql\n   SELECT customer, SUM(amount) as total\n   FROM sales\n   GROUP BY customer\n   ORDER BY total DESC\n   LIMIT 10;\n   ```\n\n**Tools**:\n• PostgreSQL, MySQL, SQLite\n• SQL Server, Oracle\n• BigQuery (cloud-based)\n\nWhat query do you need help writing?';
+            } else if (msg.includes('visualiz') || msg.includes('chart') || msg.includes('dashboard')) {
+                return 'Data Visualization Guide:\n\n**Choosing the Right Chart**:\n\n1. **Comparison**:\n   • Bar chart: categories\n   • Column chart: vertical bars\n   • Bullet chart: compare to target\n\n2. **Trends**:\n   • Line chart: over time\n   • Area chart: filled line\n   • Combination: multiple metrics\n\n3. **Composition**:\n   • Pie chart: proportions (use sparingly)\n   • Stacked bar: parts of whole\n   • Treemap: hierarchical\n\n4. **Relationships**:\n   • Scatter: correlation\n   • Bubble: 3 dimensions\n   • Network: connections\n\n5. **Distribution**:\n   • Histogram: frequency\n   • Box plot: quartiles\n   • Violin plot: distribution\n\n**Visualization Best Practices**:\n1. **Clarity**:\n   • Clear title\n   • Label axes\n   • Use units (dollars, %, etc.)\n\n2. **Design**:\n   • Limit colors (3-5)\n   • High contrast\n   • Consistent styling\n\n3. **Storytelling**:\n   • Highlight key insights\n   • Use color strategically\n   • Avoid clutter\n\n**Tools**:\n• Tableau: professional dashboards\n• Power BI: Microsoft integration\n• Looker: business intelligence\n• Google Data Studio: free option\n• Python (Matplotlib, Plotly)\n\nWhat metric do you want to visualize?';
+            } else {
+                return 'I can help with data analysis! Topics:\n\n• Data analysis process and methodology\n• Excel advanced functions (VLOOKUP, Pivot Tables)\n• SQL queries and databases\n• Data visualization and charts\n• Dashboard creation (Tableau, Power BI)\n• Statistical analysis\n• Python for data analysis (Pandas)\n• Data cleaning and preparation\n• Business intelligence\n• Report writing\n\nWhat data problem are you solving?';
+            }
+        }
+
+        /**
+         * Writing AI - Professional Writing Assistant
+         */
+        function generateWritingAIResponse(msg, original) {
+            if (msg.includes('essay') || msg.includes('write') || msg.includes('structure')) {
+                return 'Essay Writing Guide:\n\n**Essay Structure**:\n\n1. **Introduction** (10% of essay):\n   • Hook: interesting opening\n   • Background: context\n   • Thesis: main argument\n   • Roadmap: what you\'ll cover\n\n2. **Body Paragraphs** (80%):\n   • Topic sentence: main idea\n   • Evidence: examples, data\n   • Analysis: explain significance\n   • Transition: link to next paragraph\n\n3. **Conclusion** (10%):\n   • Restate thesis\n   • Summarize key points\n   • Call to action or implications\n   • No new information\n\n**Writing Process**:\n1. Outline: organize ideas\n2. Draft: write freely\n3. Review: check structure\n4. Edit: grammar, clarity\n5. Proofread: final check\n\n**Tips**:\n• Write for your audience\n• Use active voice\n• Clear, concise sentences\n• Varied sentence structure\n• One idea per paragraph\n• Strong topic sentences\n• Proper citation (APA/MLA)\n\n**Common Issues**:\n• Too many ideas in one paragraph\n• Weak thesis statement\n• Lack of evidence\n• Inconsistent tone\n• Grammatical errors\n\nWhat essay are you writing?';
+            } else if (msg.includes('grammar') || msg.includes('edit') || msg.includes('proofread')) {
+                return 'Grammar & Editing Guide:\n\n**Common Grammar Mistakes**:\n\n1. **Subject-Verb Agreement**:\n   ✗ The team are winning\n   ✓ The team is winning\n\n2. **Comma Splices**:\n   ✗ I love writing, it\'s fun\n   ✓ I love writing; it\'s fun\n\n3. **Run-on Sentences**:\n   ✗ I wrote the report and I sent it and they approved it\n   ✓ I wrote, sent, and the report was approved\n\n4. **Misplaced Modifiers**:\n   ✗ Walking to school, the dog followed me\n   ✓ As I walked to school, the dog followed me\n\n5. **Tense Consistency**:\n   ✗ She ran to the store and buys milk\n   ✓ She ran to the store and bought milk\n\n**Editing Checklist**:\n☐ Check grammar and spelling\n☐ Verify punctuation\n☐ Ensure tense consistency\n☐ Remove redundancy\n☐ Clarify unclear sentences\n☐ Check word choice\n☐ Verify citations\n☐ Read aloud for flow\n\n**Proofreading Tips**:\n• Take a break, come back fresh\n• Read aloud\n• Read backwards (catch errors)\n• Use spell checker\n• Have someone else read it\n• Print and mark up\n\n**Tools**:\n• Grammarly: AI grammar checker\n• Hemingway Editor: clarity feedback\n• Dictation: hear your writing\n\nWhat do you need help editing?';
+            } else if (msg.includes('blog') || msg.includes('content') || msg.includes('article')) {
+                return 'Content Writing Strategy:\n\n**Blog Post Structure**:\n\n1. **Headline** (most important!):\n   • Benefit-driven\n   • Clear and specific\n   • Numbers/lists attract clicks\n   • 60 characters for SEO\n\n2. **Introduction**:\n   • Hook reader immediately\n   • Problem statement\n   • Promise solution\n   • 2-3 paragraphs max\n\n3. **Body**:\n   • Scan-friendly (subheadings)\n   • Short paragraphs (2-3 sentences)\n   • Numbered lists\n   • Bullet points\n   • Bold key terms\n\n4. **Conclusion**:\n   • Summarize key points\n   • Call to action\n   • Invite comments\n\n**SEO Best Practices**:\n• Target keywords naturally\n• Internal/external links\n• Meta descriptions (160 chars)\n• Descriptive URLs\n• Image alt text\n\n**Writing Style**:\n• Active voice (prefer)\n• Simple words (avoid jargon)\n• Short sentences\n• Conversational tone\n• Storytelling\n\n**Content Ideas**:\n• How-to guides\n• Case studies\n• Top 10 lists\n• Industry trends\n• Q&A posts\n• Opinion pieces\n\n**Publishing**:\n• Catchy title\n• Featured image\n• Internal links\n• Proper formatting\n• Proofread carefully\n\nWhat topic would you blog about?';
+            } else if (msg.includes('report') || msg.includes('business') || msg.includes('professional')) {
+                return 'Professional Business Writing:\n\n**Report Structure**:\n\n1. **Executive Summary** (most important!):\n   • 1 page maximum\n   • Main findings\n   • Recommendations\n   • Readers may skip rest\n\n2. **Introduction**:\n   • Background\n   • Purpose\n   • Scope\n   • Limitations\n\n3. **Methodology**:\n   • How you gathered data\n   • Research methods\n   • Timeline\n\n4. **Findings**:\n   • Organized by topic\n   • Data/evidence\n   • Charts and tables\n   • Clear explanations\n\n5. **Analysis**:\n   • What the findings mean\n   • Impact and implications\n   • Context\n\n6. **Recommendations**:\n   • Specific actions\n   • Prioritized\n   • Realistic and measurable\n\n7. **Conclusion**:\n   • Summary of key points\n   • Final thoughts\n\n**Tone & Style**:\n• Professional, objective\n• Formal language\n• Passive voice (sometimes)\n• Third person\n• Avoid jargon/acronyms\n• Concise and clear\n\n**Formatting**:\n• Headers and subheaders\n• Numbered sections\n• Tables and charts\n• Consistent font/spacing\n• Page numbers\n• Table of contents\n\n**Email Writing**:\n• Clear subject line\n• Professional greeting\n• Concise body\n• Clear call to action\n• Professional closing\n\nWhat are you writing?';
+            } else {
+                return 'I can help improve your writing! Topics:\n\n• Essay structure and writing process\n• Grammar and proofreading\n• Content and blog writing\n• Business writing (reports, emails)\n• Headlines and copywriting\n• Style and tone\n• Clarity and readability\n• Citation formats (APA, MLA)\n• Academic writing\n• Creative writing\n• Editing and feedback\n\nWhat writing project can I help with?';
+            }
+        }
+
+        /**
+         * Math Tutor - Mathematics Expert
+         */
+        function generateMathTutorResponse(msg, original) {
+            if (msg.includes('algebra') || msg.includes('equation') || msg.includes('solve')) {
+                return 'Algebra Fundamentals:\n\n**Basic Concepts**:\n\n1. **Variables & Expressions**:\n   • x, y, z represent unknown values\n   • Expression: 2x + 3 (no equal sign)\n   • Equation: 2x + 3 = 7 (with equal sign)\n\n2. **Solving Linear Equations**:\n   ```\n   2x + 3 = 7\n   2x = 7 - 3  (subtract 3 both sides)\n   2x = 4\n   x = 2       (divide by 2)\n   ```\n\n3. **Order of Operations** (PEMDAS):\n   • Parentheses\n   • Exponents\n   • Multiplication & Division (left to right)\n   • Addition & Subtraction (left to right)\n\n4. **Polynomials**:\n   • Monomial: 3x\n   • Binomial: 3x + 2\n   • Trinomial: x² + 2x + 1\n\n5. **Factoring**:\n   • GCF: greatest common factor\n   • Difference of squares: a² - b² = (a+b)(a-b)\n   • Quadratic: x² + 5x + 6 = (x+2)(x+3)\n\n6. **Systems of Equations**:\n   ```\n   x + y = 5\n   x - y = 1\n   Solution: x = 3, y = 2\n   ```\n\n**Practice Problems**:\n• Solve: 3x - 5 = 10\n• Factor: x² + 7x + 12\n• Simplify: 2(x + 3) + 4x\n\nWhat algebra problem can I help with?';
+            } else if (msg.includes('geometry') || msg.includes('shape') || msg.includes('angle')) {
+                return 'Geometry Essentials:\n\n**Shapes & Properties**:\n\n1. **Triangles**:\n   • Sum of angles: 180°\n   • Area: ½ × base × height\n   • Perimeter: sum of sides\n   • Types: equilateral, isosceles, scalene\n\n2. **Quadrilaterals** (4-sided):\n   • Square: all sides equal, all angles 90°\n   • Rectangle: opposite sides equal, all angles 90°\n   • Parallelogram: opposite sides parallel\n   • Rhombus: all sides equal\n   • Trapezoid: one pair of parallel sides\n\n3. **Circles**:\n   • Circumference: 2πr\n   • Area: πr²\n   • Diameter: 2r\n\n4. **3D Shapes**:\n   • Cube: V = s³, SA = 6s²\n   • Sphere: V = 4/3 πr³, SA = 4πr²\n   • Cylinder: V = πr²h, SA = 2πrh + 2πr²\n\n**Angles**:\n• Acute: < 90°\n• Right: = 90°\n• Obtuse: > 90°\n• Straight: = 180°\n\n**Trigonometry**:\n   • sin(θ) = opposite/hypotenuse\n   • cos(θ) = adjacent/hypotenuse\n   • tan(θ) = opposite/adjacent\n   • Use: find missing sides/angles\n\n**Pythagorean Theorem**:\n   a² + b² = c² (right triangles)\n\nWhat geometry problem do you have?';
+            } else if (msg.includes('calculus') || msg.includes('derivative') || msg.includes('integral')) {
+                return 'Calculus Overview:\n\n**Prerequisites**:\n• Strong algebra foundation\n• Function understanding\n• Trig concepts\n\n**Three Main Topics**:\n\n1. **Limits**:\n   • Approaching a value\n   • Foundation of calculus\n   • lim(x→2) (x² + 1) = 5\n\n2. **Derivatives** (rates of change):\n   • f\'(x) or df/dx\n   • Slope of tangent line\n   • Finding: f(x) = x² → f\'(x) = 2x\n   • Applications: velocity, optimization\n\n3. **Integrals** (area under curve):\n   • Opposite of derivatives\n   • ∫f(x)dx\n   • Finding: f(x) = 2x → ∫f(x)dx = x² + C\n   • Applications: area, volume\n\n**Derivative Rules**:\n\n1. **Power Rule**:\n   f(x) = x^n → f\'(x) = nx^(n-1)\n   Example: x³ → 3x²\n\n2. **Product Rule**:\n   (uv)\' = u\'v + uv\'\n\n3. **Chain Rule**:\n   (f(g(x)))\' = f\'(g(x)) × g\'(x)\n\n**Common Derivatives**:\n• sin(x) → cos(x)\n• cos(x) → -sin(x)\n• e^x → e^x\n• ln(x) → 1/x\n\n**Applications**:\n• Optimization (max/min)\n• Related rates\n• Motion analysis\n• Economics (cost, revenue)\n\nWhat calculus topic confuses you?';
+            } else if (msg.includes('statistics') || msg.includes('probability')) {
+                return 'Statistics & Probability:\n\n**Data Types**:\n• Qualitative: categories\n• Quantitative: numbers\n\n**Central Tendency**:\n• Mean: average\n• Median: middle value\n• Mode: most frequent\n\n**Spread**:\n• Range: max - min\n• Standard deviation: how spread out\n• Variance: (std dev)²\n\n**Probability**:\n• P(A) = favorable/total\n• Independent: P(A∩B) = P(A) × P(B)\n• Mutually exclusive: P(A∪B) = P(A) + P(B)\n\n**Distributions**:\n• Normal (bell curve)\n• Binomial: success/failure\n• Poisson: rare events\n\n**Hypothesis Testing**:\n• Null hypothesis (H₀)\n• Alternative hypothesis (H₁)\n• p-value: significance\n• α = 0.05 (common threshold)\n\n**Confidence Interval**:\n• Range where true value likely lies\n• 95% CI most common\n• ± margin of error\n\n**Correlation vs Causation**:\n• Correlation: variables move together\n• Causation: one causes other\n• Correlation ≠ Causation!\n\nWhat stats problem do you have?';
+            } else {
+                return 'I can help with mathematics! Topics:\n\n• Algebra (equations, factoring, systems)\n• Geometry (shapes, angles, area, volume)\n• Trigonometry (sine, cosine, tangent)\n• Calculus (limits, derivatives, integrals)\n• Statistics (data analysis, probability)\n• Precalculus (functions, sequences)\n• Linear algebra (matrices, vectors)\n• Word problems\n• Homework help\n\nWhat math topic would you like help with?';
+            }
+        }
+
+        // ==================== AI RESPONSE ====================
+        function getAIResponse(userMessage) {
+            const msg = userMessage.toLowerCase();
+            let response = '';
+
+            // Get AI-specific intelligent responses based on contact ID
+            switch(currentContact?.id) {
+                case 1: // Study AI - Learning & Education
+                    response = generateStudyAIResponse(msg, userMessage);
+                    break;
+                case 2: // Code Helper - Programming Help
+                    response = generateCodeHelperResponse(msg, userMessage);
+                    break;
+                case 3: // Interview AI - Interview Preparation
+                    response = generateInterviewAIResponse(msg, userMessage);
+                    break;
+                case 4: // ML Assistant - Machine Learning
+                    response = generateMLResponse(msg, userMessage);
+                    break;
+                case 5: // Design Bot - UI/UX Design
+                    response = generateDesignResponse(msg, userMessage);
+                    break;
+                case 6: // Data Analyst - Data Analysis
+                    response = generateDataAnalystResponse(msg, userMessage);
+                    break;
+                case 7: // Writing AI - Writing Help
+                    response = generateWritingAIResponse(msg, userMessage);
+                    break;
+                case 8: // Math Tutor - Mathematics
+                    response = generateMathTutorResponse(msg, userMessage);
+                    break;
+                default:
+                    response = 'I\'m not sure which AI contact this is. How can I help you?';
+            }
+
+            // Add AI message
+
+            currentContact.messages.push({
+                type: 'ai',
+                text: response
+            });
+
+            // Update last message
+            currentContact.lastMessage = response;
+
+            // Hide typing indicator and render
+            hideTypingIndicator();
+            renderMessages();
+        }
+
+        // ==================== TYPING INDICATOR ====================
+        /**
+         * Show typing indicator while AI is "thinking"
+         */
+        function showTypingIndicator() {
+            const typingEl = document.createElement('div');
+            typingEl.id = 'typingIndicator';
+            typingEl.className = 'message ai';
+            typingEl.innerHTML = `
+                <div class="typing-indicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            `;
+            messagesArea.appendChild(typingEl);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
+
+        /**
+         * Hide typing indicator
+         */
+        function hideTypingIndicator() {
+            const typingEl = document.getElementById('typingIndicator');
+            if (typingEl) typingEl.remove();
+        }
+
+        // ==================== AUTO-RESIZE TEXTAREA ====================
+        /**
+         * Auto-resize textarea as user types
+         */
+        function adjustTextarea() {
+            messageInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+            });
+        }
+
+        // ==================== VOICE MESSAGE / SPEECH-TO-TEXT ====================
+        /**
+         * Initialize voice message functionality
+         */
+        let SpeechRecognition = null;
+        let recognition = null;
+        let isListening = false;
+        const voiceStatus = document.getElementById('voiceStatus');
+        const micBtn = document.getElementById('micBtn');
+
+        function initVoiceMessage() {
+            console.log('🎤 Initializing voice message...');
+            
+            // Get SpeechRecognition API with all possible prefixes
+            const SpeechRecognitionAPI = 
+                window.SpeechRecognition || 
+                window.webkitSpeechRecognition || 
+                window.mozSpeechRecognition || 
+                window.msSpeechRecognition;
+
+            if (!SpeechRecognitionAPI) {
+                console.error('❌ Speech Recognition API not supported');
+                if (micBtn) {
+                    micBtn.style.opacity = '0.5';
+                    micBtn.style.cursor = 'not-allowed';
+                    micBtn.title = '⚠️ Microphone not supported on this browser';
+                    micBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        alert('⚠️ Speech Recognition is not supported on this browser.\n\nTry using:\n✅ Google Chrome\n✅ Microsoft Edge\n✅ Safari 14.5+\n✅ Opera');
+                    });
+                }
+                return;
+            }
+
+            try {
+                SpeechRecognition = SpeechRecognitionAPI;
+                recognition = new SpeechRecognition();
+                
+                // Configuration
+                recognition.continuous = false;
+                recognition.interimResults = true;
+                recognition.lang = 'en-IN';
+                recognition.maxAlternatives = 1;
+
+                console.log('✅ SpeechRecognition API initialized successfully');
+                console.log('🌍 Language set to:', recognition.lang);
+
+                // Event: Recognition started
+                recognition.onstart = () => {
+                    console.log('▶️ Recognition started - listening for speech');
+                    isListening = true;
+                    
+                    if (micBtn) {
+                        micBtn.classList.add('active');
+                        micBtn.style.color = '#ff3b3b';
+                    }
+                    
+                    if (voiceStatus) {
+                        voiceStatus.style.display = 'flex';
+                        voiceStatus.innerHTML = '<span class="listening-dot"></span> 🎤 Listening...';
+                    }
+                };
+
+                // Event: Interim and final results
+                recognition.onresult = (event) => {
+                    console.log('📝 Result event fired, isFinal:', event.isFinal);
+                    
+                    let transcript = '';
+                    let interimTranscript = '';
+
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        const transcriptSegment = event.results[i][0].transcript;
+
+                        if (event.results[i].isFinal) {
+                            transcript += transcriptSegment + ' ';
+                        } else {
+                            interimTranscript += transcriptSegment;
+                        }
+                    }
+
+                    // Show interim text in real-time
+                    if (interimTranscript) {
+                        messageInput.value = transcript + interimTranscript;
+                        console.log('📄 Interim:', transcript + interimTranscript);
+                    }
+
+                    // Final result
+                    if (event.isFinal) {
+                        messageInput.value = transcript.trim();
+                        console.log('✅ Final transcript:', messageInput.value);
+                        messageInput.focus();
+                    }
+                };
+
+                // Event: Error handling
+                recognition.onerror = (event) => {
+                    console.error('❌ Recognition error:', event.error);
+                    
+                    let errorMsg = '';
+                    
+                    switch (event.error) {
+                        case 'network':
+                            errorMsg = 'Network error - check internet connection';
+                            break;
+                        case 'audio':
+                            errorMsg = 'Audio error - check microphone';
+                            break;
+                        case 'not-allowed':
+                            errorMsg = '⚠️ Microphone permission denied - enable in settings';
+                            break;
+                        case 'no-speech':
+                            errorMsg = '🔇 No speech detected - try speaking louder';
+                            break;
+                        case 'aborted':
+                            errorMsg = 'Recording stopped';
+                            break;
+                        default:
+                            errorMsg = 'Error: ' + event.error;
+                    }
+
+                    if (voiceStatus) {
+                        voiceStatus.innerHTML = `<span class="listening-dot"></span> ${errorMsg}`;
+                    }
+                };
+
+                // Event: Recognition ended
+                recognition.onend = () => {
+                    console.log('🛑 Recognition ended');
+                    isListening = false;
+                    
+                    if (micBtn) {
+                        micBtn.classList.remove('active');
+                        micBtn.style.color = '#667eea';
+                    }
+                    
+                    // Auto-hide voice status after 2 seconds
+                    if (voiceStatus) {
+                        setTimeout(() => {
+                            if (!isListening) {
+                                voiceStatus.style.display = 'none';
+                            }
+                        }, 2000);
+                    }
+                };
+
+            } catch (error) {
+                console.error('❌ Error creating recognition object:', error);
+                if (micBtn) {
+                    micBtn.style.opacity = '0.5';
+                    micBtn.title = '❌ Error initializing microphone';
+                }
+            }
+        }
+
+        function toggleVoiceMessage() {
+            console.log('🎤 Toggle voice called - recognition:', !!recognition, 'isListening:', isListening);
+            
+            if (!recognition) {
+                console.error('❌ Recognition object not available');
+                alert('⚠️ Speech Recognition is not available.\n\nSupported browsers:\n✅ Chrome\n✅ Edge\n✅ Safari 14.5+\n\nPlease switch to one of these browsers.');
+                return;
+            }
+
+            try {
+                if (isListening) {
+                    console.log('🛑 Stopping recognition');
+                    recognition.stop();
+                } else {
+                    console.log('▶️ Starting recognition');
+                    messageInput.value = '';
+                    recognition.start();
+                }
+            } catch (error) {
+                console.error('❌ Error toggling voice:', error);
+                if (voiceStatus) {
+                    voiceStatus.innerHTML = '<span class="listening-dot"></span> Error - try again';
+                }
+            }
+        }
+
+        // ==================== EVENT LISTENERS ====================
+        /**
+         * Setup all event listeners
+         */
+        function setupEventListeners() {
+            // Send message
+            sendBtn.addEventListener('click', sendMessage);
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            // Image upload functionality
+            const imageInput = document.getElementById('imageInput');
+            const attachBtn = document.getElementById('attachBtn');
+            const imagePreview = document.getElementById('imagePreview');
+            const previewImg = document.getElementById('previewImg');
+            const removeImageBtn = document.getElementById('removeImageBtn');
+
+            // Attach button - open file picker
+            attachBtn.addEventListener('click', () => {
+                imageInput.click();
+            });
+
+            // File input change handler
+            imageInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        previewImg.src = event.target.result;
+                        imagePreview.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                } else if (file) {
+                    alert('⚠️ Please select a valid image file!');
+                    imageInput.value = '';
+                }
+            });
+
+            // Remove image button
+            removeImageBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                previewImg.src = '';
+                imagePreview.style.display = 'none';
+                imageInput.value = '';
+            });
+
+            // Voice message
+            micBtn.addEventListener('click', toggleVoiceMessage);
+
+            // Search
+            searchInput.addEventListener('input', (e) => {
+                renderContacts('all', e.target.value);
+            });
+
+            // Tabs
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    const tab = e.target.getAttribute('data-tab');
+                    renderContacts(tab, searchInput.value);
+                });
+            });
+
+            // Back button (mobile)
+            backBtn.addEventListener('click', () => {
+                leftPanel.classList.add('active');
+                backBtn.style.display = 'none';
+            });
+
+            // Handle responsive
+            window.addEventListener('resize', () => {
+                if (window.innerWidth > 768) {
+                    leftPanel.classList.add('active');
+                    backBtn.style.display = 'none';
+                }
+            });
+
+            // New chat button
+            document.getElementById('newChatBtn').addEventListener('click', () => {
+                messageInput.focus();
+            });
+
+            // ==================== MENU FUNCTIONALITY ====================
+            const menuBtn = document.getElementById('menuBtn');
+            const menuDropdown = document.getElementById('menuDropdown');
+            const newGroupBtn = document.getElementById('newGroupBtn');
+            const starredBtn = document.getElementById('starredBtn');
+            const selectChatsBtn = document.getElementById('selectChatsBtn');
+            const markReadBtn = document.getElementById('markReadBtn');
+            const appLockBtn = document.getElementById('appLockBtn');
+            const logoutBtn = document.getElementById('logoutBtn');
+
+            // Toggle menu dropdown
+            menuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                menuDropdown.classList.toggle('active');
+            });
+
+            // Close menu when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.menu-container')) {
+                    menuDropdown.classList.remove('active');
+                }
+            });
+
+            // Track app state
+            let isAppLocked = false;
+            let isSelectMode = false;
+            let selectedContacts = new Set();
+
+            // Menu item actions
+            newGroupBtn.addEventListener('click', () => {
+                const groupName = prompt('📱 Create New Group\n\nEnter group name:');
+                if (groupName && groupName.trim()) {
+                    // Create new group contact
+                    const groupId = Math.max(...aiContacts.map(c => c.id)) + 1;
+                    const newGroup = {
+                        id: groupId,
+                        name: groupName.trim(),
+                        avatar: '👥',
+                        status: 'online',
+                        color: 'ai-1',
+                        lastMessage: 'Group created',
+                        messages: [
+                            { type: 'ai', text: `Welcome to ${groupName.trim()}! This is a group chat with multiple AI assistants.` }
+                        ]
+                    };
+                    aiContacts.unshift(newGroup);
+                    selectContact(newGroup);
+                    renderContacts('all', '');
+                    alert(`✅ Group "${groupName.trim()}" created successfully!`);
+                }
+                menuDropdown.classList.remove('active');
+            });
+
+            starredBtn.addEventListener('click', () => {
+                if (!currentContact) {
+                    alert('⭐ Please select a chat first!');
+                    menuDropdown.classList.remove('active');
+                    return;
+                }
+
+                // Find starred messages
+                const starredMessages = currentContact.messages.map((msg, index) => {
+                    const messageEl = document.querySelector(`[data-msg-index="${index}"]`);
+                    if (messageEl && messageEl.querySelector('.star-indicator')) {
+                        return `${msg.text.substring(0, 50)}...`;
+                    }
+                    return null;
+                }).filter(m => m);
+
+                if (starredMessages.length === 0) {
+                    alert('⭐ No starred messages in this chat!\n\nDouble-click a message and click the star to save it.');
+                } else {
+                    alert(`⭐ Starred Messages (${starredMessages.length})\n\n${starredMessages.join('\n')}`);
+                }
+                menuDropdown.classList.remove('active');
+            });
+
+            selectChatsBtn.addEventListener('click', () => {
+                isSelectMode = !isSelectMode;
+                selectedContacts.clear();
+                
+                if (isSelectMode) {
+                    // Enable select mode
+                    document.querySelectorAll('.contact-item').forEach(item => {
+                        item.style.cursor = 'pointer';
+                        item.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            item.style.background = '#e8e8f5';
+                            const contactName = item.querySelector('.contact-name').textContent;
+                            selectedContacts.add(contactName);
+                        });
+                    });
+                    alert('✅ Select mode ON\n\nClick contacts to select them. Click again to deselect.');
+                } else {
+                    // Disable select mode
+                    document.querySelectorAll('.contact-item').forEach(item => {
+                        item.style.background = '';
+                        item.style.cursor = '';
+                    });
+                    if (selectedContacts.size > 0) {
+                        alert(`✅ Selected ${selectedContacts.size} chat(s)!\n\nSelected: ${Array.from(selectedContacts).join(', ')}`);
+                    }
+                }
+                menuDropdown.classList.remove('active');
+            });
+
+            markReadBtn.addEventListener('click', () => {
+                // Mark all contacts as read
+                aiContacts.forEach(contact => {
+                    contact.messages.forEach(msg => {
+                        msg.isRead = true;
+                    });
+                });
+                
+                // Update UI
+                document.querySelectorAll('.contact-item').forEach(item => {
+                    item.style.fontWeight = 'normal';
+                    item.style.opacity = '1';
+                });
+                
+                alert('📋 All chats marked as read!\n\nNotification count reset to 0.');
+                menuDropdown.classList.remove('active');
+            });
+
+            appLockBtn.addEventListener('click', () => {
+                const password = prompt('🔒 App Lock\n\nEnter 4-digit PIN:');
+                if (password && password.length === 4 && /^\d+$/.test(password)) {
+                    isAppLocked = true;
+                    
+                    // Add visual lock indicator
+                    const lockStatus = document.createElement('div');
+                    lockStatus.id = 'lockStatus';
+                    lockStatus.textContent = '🔒 Locked';
+                    lockStatus.style.cssText = 'position: fixed; top: 10px; right: 10px; background: #ff6b6b; color: white; padding: 8px 16px; border-radius: 20px; font-size: 12px; z-index: 9999;';
+                    document.body.appendChild(lockStatus);
+                    
+                    alert('🔒 App is now locked!\n\nNo one can access your chats without the PIN.');
+                    
+                    // Set auto-lock timeout (5 minutes)
+                    setTimeout(() => {
+                        if (isAppLocked) {
+                            const unlock = prompt('🔒 App is locked\n\nEnter PIN to unlock:');
+                            if (unlock === password) {
+                                isAppLocked = false;
+                                document.getElementById('lockStatus')?.remove();
+                                alert('🔓 App unlocked!');
+                            }
+                        }
+                    }, 300000); // 5 minutes
+                } else if (password !== null) {
+                    alert('❌ Invalid PIN! Must be exactly 4 digits.');
+                }
+                menuDropdown.classList.remove('active');
+            });
+
+            logoutBtn.addEventListener('click', () => {
+                if (confirm('🚪 Are you sure you want to log out?\n\nYou will be returned to the login page.')) {
+                    // Redirect to logout
+                    window.location.href = '/logout/';
+                }
+            });
+
+            // ==================== MESSAGE CONTEXT MENU ====================
+            const contextMenu = document.getElementById('messageContextMenu');
+            let selectedMessage = null;
+
+            // Add double-click listener to messages with EVENT DELEGATION
+            // This works for dynamically added messages too!
+            messagesArea.addEventListener('dblclick', (e) => {
+                console.log('Double-click detected!', e.target);
+                const messageBubble = e.target.closest('.message-bubble');
+                console.log('Message bubble found:', messageBubble);
+                if (messageBubble && !messageBubble.parentElement.classList.contains('deleted')) {
+                    selectedMessage = messageBubble;
+                    console.log('Showing context menu at:', e.clientX, e.clientY);
+                    showContextMenu(e.clientX, e.clientY);
+                }
+            });
+
+            // Show context menu at cursor position with smart positioning
+            function showContextMenu(x, y) {
+                try {
+                    // First, remove active class to reset
+                    contextMenu.classList.remove('active');
+                    
+                    // Force reflow to ensure previous state is cleared
+                    void contextMenu.offsetWidth;
+                    
+                    // Make menu visible to measure
+                    contextMenu.style.display = 'block';
+                    contextMenu.style.visibility = 'visible';
+                    contextMenu.style.opacity = '1';
+                    contextMenu.style.left = '0px';
+                    contextMenu.style.top = '0px';
+                    
+                    // Get menu dimensions
+                    const menuWidth = contextMenu.offsetWidth;
+                    const menuHeight = contextMenu.offsetHeight;
+                    const viewportWidth = window.innerWidth;
+                    const viewportHeight = window.innerHeight;
+                    
+                    console.log('Menu dimensions:', { menuWidth, menuHeight, viewportWidth, viewportHeight });
+                    
+                    // Adjust position if menu goes off-screen
+                    let finalX = x;
+                    let finalY = y;
+                    
+                    // Check right edge
+                    if (x + menuWidth > viewportWidth) {
+                        finalX = viewportWidth - menuWidth - 10;
+                    }
+                    
+                    // Check bottom edge
+                    if (y + menuHeight > viewportHeight) {
+                        finalY = viewportHeight - menuHeight - 10;
+                    }
+                    
+                    // Check left edge
+                    if (finalX < 0) {
+                        finalX = 10;
+                    }
+                    
+                    // Check top edge
+                    if (finalY < 0) {
+                        finalY = 10;
+                    }
+                    
+                    // Apply final position
+                    contextMenu.style.left = finalX + 'px';
+                    contextMenu.style.top = finalY + 'px';
+                    
+                    // Add active class for animation
+                    contextMenu.classList.add('active');
+                    
+                    console.log('Context menu shown at:', { finalX, finalY });
+                } catch (error) {
+                    console.error('Error showing context menu:', error);
+                }
+            }
+
+            // Close context menu on outside click
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.message-context-menu')) {
+                    contextMenu.classList.remove('active');
+                }
+            });
+
+            // Emoji reaction buttons
+            document.querySelectorAll('.emoji-btn:not(.add-emoji)').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const emoji = btn.dataset.emoji;
+                    if (selectedMessage) {
+                        addEmojiReaction(selectedMessage, emoji);
+                        contextMenu.classList.remove('active');
+                    }
+                });
+            });
+
+            // Add emoji (plus button)
+            document.querySelector('.emoji-btn.add-emoji').addEventListener('click', () => {
+                alert('😊 More emojis coming soon!\n\nYou\'ll be able to choose from hundreds of emojis.');
+            });
+
+            // Add emoji reaction to message
+            function addEmojiReaction(messageBubble, emoji) {
+                let reactions = messageBubble.parentElement.querySelector('.message-reactions');
+                if (!reactions) {
+                    reactions = document.createElement('div');
+                    reactions.className = 'message-reactions';
+                    reactions.style.marginTop = '6px';
+                    reactions.style.fontSize = '14px';
+                    reactions.style.display = 'flex';
+                    reactions.style.gap = '4px';
+                    reactions.style.flexWrap = 'wrap';
+                    messageBubble.parentElement.appendChild(reactions);
+                }
+                
+                let reactionBtn = Array.from(reactions.querySelectorAll('button')).find(btn => 
+                    btn.textContent.includes(emoji)
+                );
+                
+                if (reactionBtn) {
+                    let count = parseInt(reactionBtn.textContent.split(' ')[1]) || 1;
+                    reactionBtn.textContent = emoji + ' ' + (count + 1);
+                    reactionBtn.style.background = '#e8e8e8';
+                } else {
+                    reactionBtn = document.createElement('button');
+                    reactionBtn.textContent = emoji + ' 1';
+                    reactionBtn.style.border = 'none';
+                    reactionBtn.style.background = '#f0f0f0';
+                    reactionBtn.style.padding = '2px 8px';
+                    reactionBtn.style.borderRadius = '16px';
+                    reactionBtn.style.cursor = 'pointer';
+                    reactionBtn.style.transition = 'all 0.2s';
+                    reactionBtn.addEventListener('hover', function() {
+                        this.style.background = '#e0e0e0';
+                    });
+                    reactions.appendChild(reactionBtn);
+                }
+            }
+
+            // Context menu actions
+            document.getElementById('contextReply').addEventListener('click', () => {
+                if (selectedMessage) {
+                    const text = selectedMessage.textContent;
+                    messageInput.value = '> ' + text + '\n\n';
+                    messageInput.focus();
+                }
+                contextMenu.classList.remove('active');
+            });
+
+            document.getElementById('contextCopy').addEventListener('click', () => {
+                if (selectedMessage) {
+                    const text = selectedMessage.textContent;
+                    navigator.clipboard.writeText(text).then(() => {
+                        alert('✓ Message copied to clipboard!');
+                    });
+                }
+                contextMenu.classList.remove('active');
+            });
+
+            document.getElementById('contextForward').addEventListener('click', () => {
+                if (selectedMessage) {
+                    const messageText = selectedMessage.textContent;
+                    
+                    // Create list of other contacts
+                    const otherContacts = aiContacts.filter(c => c.id !== currentContact.id);
+                    
+                    if (otherContacts.length === 0) {
+                        alert('No other contacts to forward to!');
+                        contextMenu.classList.remove('active');
+                        return;
+                    }
+                    
+                    // Create contact selection dialog
+                    let contactList = 'Select contact to forward to:\n\n';
+                    otherContacts.forEach((contact, index) => {
+                        contactList += `${index + 1}. ${contact.name}\n`;
+                    });
+                    
+                    const selection = prompt(contactList + '\nEnter number (1-' + otherContacts.length + '):');
+                    
+                    if (selection) {
+                        const index = parseInt(selection) - 1;
+                        if (index >= 0 && index < otherContacts.length) {
+                            const targetContact = otherContacts[index];
+                            
+                            // Forward message - add as user's sent message
+                            targetContact.messages.push({
+                                type: 'user',
+                                text: '📤 Forwarded: ' + messageText
+                            });
+                            
+                            // Update last message
+                            targetContact.lastMessage = '📤 Forwarded: ' + messageText.substring(0, 50) + '...';
+                            
+                            // Show success
+                            alert(`✓ Message forwarded to ${targetContact.name}!\n\n"${messageText.substring(0, 50)}..."`);
+                            
+                            // Render updated contacts
+                            renderContacts('all', '');
+                        } else {
+                            alert('Invalid selection!');
+                        }
+                    }
+                }
+                contextMenu.classList.remove('active');
+            });
+
+            document.getElementById('contextPin').addEventListener('click', () => {
+                if (selectedMessage) {
+                    selectedMessage.parentElement.style.background = '#fff9e6';
+                    selectedMessage.parentElement.style.borderLeft = '4px solid #ffd700';
+                    selectedMessage.parentElement.style.paddingLeft = '12px';
+                    alert('📌 Message pinned!\n\nYou can view pinned messages in the menu.');
+                }
+                contextMenu.classList.remove('active');
+            });
+
+            document.getElementById('contextStar').addEventListener('click', () => {
+                if (selectedMessage) {
+                    let starred = selectedMessage.parentElement.querySelector('.star-indicator');
+                    if (!starred) {
+                        starred = document.createElement('span');
+                        starred.className = 'star-indicator';
+                        starred.textContent = '⭐';
+                        starred.style.marginLeft = '8px';
+                        selectedMessage.appendChild(starred);
+                        alert('⭐ Message starred!');
+                    } else {
+                        starred.remove();
+                        alert('⭐ Star removed!');
+                    }
+                }
+                contextMenu.classList.remove('active');
+            });
+
+            document.getElementById('contextSelect').addEventListener('click', () => {
+                if (selectedMessage) {
+                    selectedMessage.parentElement.style.background = '#e8e8f5';
+                    selectedMessage.parentElement.style.borderLeft = '4px solid #667eea';
+                    alert('✅ Message selected!\n\nYou can now perform bulk actions.');
+                }
+                contextMenu.classList.remove('active');
+            });
+
+            document.getElementById('contextDelete').addEventListener('click', () => {
+                if (selectedMessage) {
+                    const messageElement = selectedMessage.parentElement;
+                    
+                    // Mark message as deleted
+                    messageElement.classList.add('deleted');
+                    
+                    // Replace content with deleted message placeholder
+                    const originalText = selectedMessage.textContent;
+                    selectedMessage.dataset.originalText = originalText;
+                    selectedMessage.textContent = 'This message was deleted';
+                    
+                    // Disable double-click on deleted messages
+                    selectedMessage.style.pointerEvents = 'none';
+                    
+                    // Remove reactions if any
+                    const reactions = messageElement.querySelector('.message-reactions');
+                    if (reactions) {
+                        reactions.remove();
+                    }
+                    
+                    // Show confirmation
+                    messageElement.style.animation = 'messageDeletedPulse 0.5s ease';
+                }
+                contextMenu.classList.remove('active');
+            });
+        }
+
+        // ==================== START APP ====================
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
